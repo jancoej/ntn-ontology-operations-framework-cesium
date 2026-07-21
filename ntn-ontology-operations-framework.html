@@ -58,6 +58,7 @@
         <div class="row"><span>Serving satellite</span><strong id="activeSatelliteName">--</strong></div>
         <div class="row"><span>Elevation angle</span><strong id="coverageElevation">--</strong></div>
         <div class="row"><span>Constellation</span><strong id="constellationSize">12 LEO</strong></div>
+        <div class="row"><span>Footprints</span><strong id="coverageLegend">Blue / Light / Red</strong></div>
         <div class="row"><span>Handovers</span><strong id="handoverCount">0</strong></div>
         <div class="row"><span>Objects</span><strong id="objectCount">0</strong></div>
         <div class="row"><span>Links</span><strong id="linkCount">0</strong></div>
@@ -202,6 +203,30 @@ function coverageInfo(){
   }
   return{available:bestElevation>=MIN_ELEVATION_DEG,elevation:bestElevation,groundId,satelliteId,index:bestIndex};
 }
+
+function satelliteElevation(index){
+  const groundId=serviceGroundId();
+  if(!groundId)return 90;
+  return elevationAngleToPosition(groundId,constellationPosition(index,ALT));
+}
+function satelliteCoverageClass(index){
+  const elevation=satelliteElevation(index);
+  if(elevation<MIN_ELEVATION_DEG)return "out";
+  if(state.coverageAvailable&&index===state.activeSatelliteIndex)return "serving";
+  return "covering";
+}
+function coverageFillColor(index){
+  const cls=satelliteCoverageClass(index);
+  if(cls==="serving")return Cesium.Color.CYAN.withAlpha(.16);
+  if(cls==="covering")return Cesium.Color.DEEPSKYBLUE.withAlpha(.08);
+  return Cesium.Color.RED.withAlpha(.05);
+}
+function coverageOutlineColor(index){
+  const cls=satelliteCoverageClass(index);
+  if(cls==="serving")return Cesium.Color.CYAN.withAlpha(.92);
+  if(cls==="covering")return Cesium.Color.DEEPSKYBLUE.withAlpha(.70);
+  return Cesium.Color.RED.withAlpha(.48);
+}
 function linkAvailable(a,b,type){
   if(type!=="service")return true;
   const info=coverageInfo();
@@ -259,9 +284,19 @@ for(let index=0;index<CONSTELLATION_SIZE;index+=1){
       outlineWidth:2
     },
     label:{
-      text:new Cesium.CallbackProperty(()=>index===state.activeSatelliteIndex?`${satelliteName(index)}\nSERVING UE`:satelliteName(index),false),
+      text:new Cesium.CallbackProperty(()=>{
+        const cls=satelliteCoverageClass(index);
+        if(cls==="serving")return `${satelliteName(index)}\nSERVING UE`;
+        if(cls==="covering")return `${satelliteName(index)}\nCOVERS ZONE`;
+        return satelliteName(index);
+      },false),
       font:"bold 11px Arial",
-      fillColor:new Cesium.CallbackProperty(()=>index===state.activeSatelliteIndex?Cesium.Color.CYAN:Cesium.Color.LIGHTGRAY,false),
+      fillColor:new Cesium.CallbackProperty(()=>{
+        const cls=satelliteCoverageClass(index);
+        if(cls==="serving")return Cesium.Color.CYAN;
+        if(cls==="covering")return Cesium.Color.DEEPSKYBLUE;
+        return Cesium.Color.LIGHTGRAY;
+      },false),
       outlineColor:Cesium.Color.BLACK,
       outlineWidth:3,
       style:Cesium.LabelStyle.FILL_AND_OUTLINE,
@@ -275,22 +310,26 @@ for(let index=0;index<CONSTELLATION_SIZE;index+=1){
   constellationEntities.push(entity);
 }
 
-const coverageFootprint=viewer.entities.add({
-  name:"Active LEO Service Coverage",
-  position:new Cesium.CallbackPositionProperty(()=>Cesium.Cartesian3.fromDegrees(
-    constellationLongitude(state.activeSatelliteIndex),
-    constellationLatitude(state.activeSatelliteIndex),
-    0
-  ),false),
-  ellipse:{
-    semiMajorAxis:COVERAGE_RADIUS_M,
-    semiMinorAxis:COVERAGE_RADIUS_M,
-    material:Cesium.Color.CYAN.withAlpha(.13),
-    outline:true,
-    outlineColor:Cesium.Color.CYAN.withAlpha(.8),
-    height:0
-  }
-});
+const coverageFootprints=[];
+for(let index=0;index<CONSTELLATION_SIZE;index+=1){
+  const footprint=viewer.entities.add({
+    name:`${satelliteName(index)} Coverage`,
+    position:new Cesium.CallbackPositionProperty(()=>Cesium.Cartesian3.fromDegrees(
+      constellationLongitude(index),
+      constellationLatitude(index),
+      0
+    ),false),
+    ellipse:{
+      semiMajorAxis:COVERAGE_RADIUS_M,
+      semiMinorAxis:COVERAGE_RADIUS_M,
+      material:new Cesium.CallbackProperty(()=>coverageFillColor(index),false),
+      outline:true,
+      outlineColor:new Cesium.CallbackProperty(()=>coverageOutlineColor(index),false),
+      height:0
+    }
+  });
+  coverageFootprints.push(footprint);
+}
 
 function clearEntities(){Object.values(nodes).forEach(e=>viewer.entities.remove(e));links.forEach(e=>viewer.entities.remove(e));Object.keys(nodes).forEach(k=>delete nodes[k]);links.length=0}
 function material(type){if(type==="service")return Cesium.Color.CYAN;if(type==="feeder")return Cesium.Color.ORANGE;if(type==="isl")return new Cesium.PolylineDashMaterialProperty({color:Cesium.Color.VIOLET,dashLength:12});return Cesium.Color.LIME}
