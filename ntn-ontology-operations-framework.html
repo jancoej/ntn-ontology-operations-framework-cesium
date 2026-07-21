@@ -347,7 +347,7 @@ for(let index=0;index<CONSTELLATION_SIZE;index+=1){
     ellipse:{
       semiMajorAxis:COVERAGE_RADIUS_M,
       semiMinorAxis:COVERAGE_RADIUS_M,
-      material:new Cesium.CallbackProperty(()=>coverageFillColor(index),false),
+      material:new Cesium.ColorMaterialProperty(new Cesium.CallbackProperty(()=>coverageFillColor(index),false)),
       outline:false,
       height:18000
     }
@@ -359,8 +359,8 @@ for(let index=0;index<CONSTELLATION_SIZE;index+=1){
     polyline:{
       positions:new Cesium.CallbackProperty(()=>coverageRingPositions(index),false),
       width:new Cesium.CallbackProperty(()=>index===state.activeSatelliteIndex?4.5:3.0,false),
-      material:new Cesium.CallbackProperty(()=>coverageOutlineColor(index),false),
-      depthFailMaterial:new Cesium.CallbackProperty(()=>coverageDepthColor(index),false),
+      material:new Cesium.ColorMaterialProperty(new Cesium.CallbackProperty(()=>coverageOutlineColor(index),false)),
+      depthFailMaterial:new Cesium.ColorMaterialProperty(new Cesium.CallbackProperty(()=>coverageDepthColor(index),false)),
       arcType:Cesium.ArcType.NONE,
       clampToGround:false
     }
