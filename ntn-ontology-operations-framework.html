@@ -288,6 +288,7 @@ function refreshCoverageState(writeLog=true){
     }
   }
   state.previousCoverage=info.available;
+  updateCoverageFootprintStyles();
 }
 function orbit(alt,color,amp,phase){
   const ps=[];for(let l=-180;l<=180;l+=2)ps.push(Cesium.Cartesian3.fromDegrees(l,amp*Math.sin(Cesium.Math.toRadians(l+phase)),alt));
@@ -336,7 +337,17 @@ for(let index=0;index<CONSTELLATION_SIZE;index+=1){
 
 const coverageFootprints=[];
 const coverageRings=[];
+const coverageStyleProperties=[];
+
 for(let index=0;index<CONSTELLATION_SIZE;index+=1){
+  // Use ConstantProperty objects for all materials. The colors are updated
+  // imperatively by updateCoverageFootprintStyles(), avoiding dynamic
+  // CallbackProperty objects in Cesium material fields.
+  const fillColorProperty=new Cesium.ConstantProperty(Cesium.Color.RED.withAlpha(.07));
+  const ringColorProperty=new Cesium.ConstantProperty(Cesium.Color.RED.withAlpha(.62));
+  const depthColorProperty=new Cesium.ConstantProperty(Cesium.Color.RED.withAlpha(.28));
+  const ringWidthProperty=new Cesium.ConstantProperty(3.0);
+
   const footprint=viewer.entities.add({
     name:`${satelliteName(index)} Coverage Fill`,
     position:new Cesium.CallbackPositionProperty(()=>Cesium.Cartesian3.fromDegrees(
@@ -347,7 +358,7 @@ for(let index=0;index<CONSTELLATION_SIZE;index+=1){
     ellipse:{
       semiMajorAxis:COVERAGE_RADIUS_M,
       semiMinorAxis:COVERAGE_RADIUS_M,
-      material:new Cesium.ColorMaterialProperty(new Cesium.CallbackProperty(()=>coverageFillColor(index),false)),
+      material:new Cesium.ColorMaterialProperty(fillColorProperty),
       outline:false,
       height:18000
     }
@@ -358,14 +369,44 @@ for(let index=0;index<CONSTELLATION_SIZE;index+=1){
     name:`${satelliteName(index)} Coverage Boundary`,
     polyline:{
       positions:new Cesium.CallbackProperty(()=>coverageRingPositions(index),false),
-      width:new Cesium.CallbackProperty(()=>index===state.activeSatelliteIndex?4.5:3.0,false),
-      material:new Cesium.ColorMaterialProperty(new Cesium.CallbackProperty(()=>coverageOutlineColor(index),false)),
-      depthFailMaterial:new Cesium.ColorMaterialProperty(new Cesium.CallbackProperty(()=>coverageDepthColor(index),false)),
+      width:ringWidthProperty,
+      material:new Cesium.ColorMaterialProperty(ringColorProperty),
+      depthFailMaterial:new Cesium.ColorMaterialProperty(depthColorProperty),
       arcType:Cesium.ArcType.NONE,
       clampToGround:false
     }
   });
   coverageRings.push(ring);
+  coverageStyleProperties.push({
+    fillColorProperty,
+    ringColorProperty,
+    depthColorProperty,
+    ringWidthProperty
+  });
+}
+
+function updateCoverageFootprintStyles(){
+  for(let index=0;index<CONSTELLATION_SIZE;index+=1){
+    const cls=satelliteCoverageClass(index);
+    const style=coverageStyleProperties[index];
+
+    if(cls==="serving"){
+      style.fillColorProperty.setValue(Cesium.Color.CYAN.withAlpha(.20));
+      style.ringColorProperty.setValue(Cesium.Color.CYAN.withAlpha(.98));
+      style.depthColorProperty.setValue(Cesium.Color.CYAN.withAlpha(.52));
+      style.ringWidthProperty.setValue(5.0);
+    }else if(cls==="covering"){
+      style.fillColorProperty.setValue(Cesium.Color.DEEPSKYBLUE.withAlpha(.11));
+      style.ringColorProperty.setValue(Cesium.Color.DEEPSKYBLUE.withAlpha(.80));
+      style.depthColorProperty.setValue(Cesium.Color.DEEPSKYBLUE.withAlpha(.38));
+      style.ringWidthProperty.setValue(3.5);
+    }else{
+      style.fillColorProperty.setValue(Cesium.Color.RED.withAlpha(.07));
+      style.ringColorProperty.setValue(Cesium.Color.RED.withAlpha(.66));
+      style.depthColorProperty.setValue(Cesium.Color.RED.withAlpha(.31));
+      style.ringWidthProperty.setValue(3.0);
+    }
+  }
 }
 
 function clearEntities(){Object.values(nodes).forEach(e=>viewer.entities.remove(e));links.forEach(e=>viewer.entities.remove(e));Object.keys(nodes).forEach(k=>delete nodes[k]);links.length=0}
