@@ -58,7 +58,7 @@
         <div class="row"><span>Serving satellite</span><strong id="activeSatelliteName">--</strong></div>
         <div class="row"><span>Elevation angle</span><strong id="coverageElevation">--</strong></div>
         <div class="row"><span>Constellation</span><strong id="constellationSize">12 LEO</strong></div>
-        <div class="row"><span>Footprints</span><strong id="coverageLegend">Blue / Light / Red</strong></div>
+        <div class="row"><span>Footprints</span><strong id="coverageLegend">Blue active / Blue cover / Red no cover</strong></div>
         <div class="row"><span>Handovers</span><strong id="handoverCount">0</strong></div>
         <div class="row"><span>Objects</span><strong id="objectCount">0</strong></div>
         <div class="row"><span>Links</span><strong id="linkCount">0</strong></div>
@@ -217,15 +217,39 @@ function satelliteCoverageClass(index){
 }
 function coverageFillColor(index){
   const cls=satelliteCoverageClass(index);
-  if(cls==="serving")return Cesium.Color.CYAN.withAlpha(.16);
-  if(cls==="covering")return Cesium.Color.DEEPSKYBLUE.withAlpha(.08);
-  return Cesium.Color.RED.withAlpha(.05);
+  if(cls==="serving")return Cesium.Color.CYAN.withAlpha(.24);
+  if(cls==="covering")return Cesium.Color.DEEPSKYBLUE.withAlpha(.16);
+  return Cesium.Color.RED.withAlpha(.13);
 }
 function coverageOutlineColor(index){
   const cls=satelliteCoverageClass(index);
   if(cls==="serving")return Cesium.Color.CYAN.withAlpha(.92);
   if(cls==="covering")return Cesium.Color.DEEPSKYBLUE.withAlpha(.70);
   return Cesium.Color.RED.withAlpha(.48);
+}
+function coverageDepthColor(index){
+  const cls=satelliteCoverageClass(index);
+  if(cls==="serving")return Cesium.Color.CYAN.withAlpha(.72);
+  if(cls==="covering")return Cesium.Color.DEEPSKYBLUE.withAlpha(.52);
+  return Cesium.Color.RED.withAlpha(.42);
+}
+function coverageRingPositions(index){
+  const centerLon=Cesium.Math.toRadians(constellationLongitude(index));
+  const centerLat=Cesium.Math.toRadians(constellationLatitude(index));
+  const angularRadius=COVERAGE_RADIUS_M/EARTH_RADIUS_M;
+  const positions=[];
+  const steps=96;
+  for(let step=0;step<=steps;step+=1){
+    const bearing=(step/steps)*Cesium.Math.TWO_PI;
+    const sinLat2=Math.sin(centerLat)*Math.cos(angularRadius)+Math.cos(centerLat)*Math.sin(angularRadius)*Math.cos(bearing);
+    const lat2=Math.asin(Cesium.Math.clamp(sinLat2,-1,1));
+    const lon2=centerLon+Math.atan2(
+      Math.sin(bearing)*Math.sin(angularRadius)*Math.cos(centerLat),
+      Math.cos(angularRadius)-Math.sin(centerLat)*Math.sin(lat2)
+    );
+    positions.push(Cesium.Cartesian3.fromRadians(lon2,lat2,35000));
+  }
+  return positions;
 }
 function linkAvailable(a,b,type){
   if(type!=="service")return true;
@@ -311,24 +335,37 @@ for(let index=0;index<CONSTELLATION_SIZE;index+=1){
 }
 
 const coverageFootprints=[];
+const coverageRings=[];
 for(let index=0;index<CONSTELLATION_SIZE;index+=1){
   const footprint=viewer.entities.add({
-    name:`${satelliteName(index)} Coverage`,
+    name:`${satelliteName(index)} Coverage Fill`,
     position:new Cesium.CallbackPositionProperty(()=>Cesium.Cartesian3.fromDegrees(
       constellationLongitude(index),
       constellationLatitude(index),
-      0
+      18000
     ),false),
     ellipse:{
       semiMajorAxis:COVERAGE_RADIUS_M,
       semiMinorAxis:COVERAGE_RADIUS_M,
       material:new Cesium.CallbackProperty(()=>coverageFillColor(index),false),
-      outline:true,
-      outlineColor:new Cesium.CallbackProperty(()=>coverageOutlineColor(index),false),
-      height:0
+      outline:false,
+      height:18000
     }
   });
   coverageFootprints.push(footprint);
+
+  const ring=viewer.entities.add({
+    name:`${satelliteName(index)} Coverage Boundary`,
+    polyline:{
+      positions:new Cesium.CallbackProperty(()=>coverageRingPositions(index),false),
+      width:new Cesium.CallbackProperty(()=>index===state.activeSatelliteIndex?4.5:3.0,false),
+      material:new Cesium.CallbackProperty(()=>coverageOutlineColor(index),false),
+      depthFailMaterial:new Cesium.CallbackProperty(()=>coverageDepthColor(index),false),
+      arcType:Cesium.ArcType.NONE,
+      clampToGround:false
+    }
+  });
+  coverageRings.push(ring);
 }
 
 function clearEntities(){Object.values(nodes).forEach(e=>viewer.entities.remove(e));links.forEach(e=>viewer.entities.remove(e));Object.keys(nodes).forEach(k=>delete nodes[k]);links.length=0}
