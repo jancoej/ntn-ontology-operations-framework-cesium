@@ -1,7 +1,99 @@
-<a
-  href="./ntn-ontology-operations-framework.html"
-  target="_blank"
-  class="architecture-link"
->
-  OPEN NTN ONTOLOGY SIMULATOR
-</a>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Satellite Operations Engineering Simulator</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/cesium@1.143.0/Build/Cesium/Cesium.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cesium@1.143.0/Build/Cesium/Widgets/widgets.css">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="top-header">
+      <div>
+        <h1>Satellite Operations & Capacity Engineering Simulator</h1>
+        <p>Mission control · telemetry · performance · capacity</p>
+      </div>
+      <div class="mission-status">
+        <span id="missionStatusIndicator" class="status-dot nominal"></span>
+        <div>
+          <small>MISSION STATUS</small>
+          <strong id="missionStatus">NOMINAL</strong>
+        </div>
+      </div>
+    </header>
+
+    <main class="dashboard">
+      <section class="map-section">
+        <div id="cesiumContainer"></div>
+
+        <div class="orbit-controls">
+          <button id="btnAll" class="orbit-button active">ALL</button>
+          <button id="btnLeo" class="orbit-button">LEO</button>
+          <button id="btnMeo" class="orbit-button">MEO</button>
+          <button id="btnGeo" class="orbit-button">GEO</button>
+        </div>
+
+        <div class="mission-info-panel">
+          <div><span>Simulation</span><strong>LIVE</strong></div>
+          <div><span>Active satellites</span><strong>3</strong></div>
+          <div><span>Mission time</span><strong id="missionClock">00:00:00</strong></div>
+        </div>
+
+        <a class="architecture-link" href="./ntn-ontology-operations-framework.html">
+          OPEN NTN ONTOLOGY SIMULATOR
+        </a>
+      </section>
+
+      <aside class="operations-panel">
+        <section class="data-panel">
+          <div class="panel-header">
+            <div><small>SPACECRAFT</small><h2>Satellite Health</h2></div>
+            <strong class="nominal-text">NOMINAL</strong>
+          </div>
+          <div class="telemetry-item">
+            <div class="telemetry-header"><span>Battery SOC</span><strong id="batteryValue">87.0 %</strong></div>
+            <div class="progress-bar"><div id="batteryBar" class="progress-fill" style="width:87%"></div></div>
+          </div>
+          <div class="telemetry-row"><span>Bus Voltage</span><strong id="voltageValue">48.2 V</strong></div>
+          <div class="telemetry-row"><span>Payload Temperature</span><strong id="temperatureValue">41.3 °C</strong></div>
+          <div class="telemetry-row"><span>Attitude Error</span><strong id="attitudeValue">0.030°</strong></div>
+        </section>
+
+        <section class="data-panel">
+          <div class="panel-header"><div><small>PAYLOAD</small><h2>Performance</h2></div></div>
+          <div class="telemetry-row"><span>Current Throughput</span><strong id="throughputValue">8.7 Gbps</strong></div>
+          <div class="telemetry-item">
+            <div class="telemetry-header"><span>Capacity Utilization</span><strong id="capacityValue">72.5 %</strong></div>
+            <div class="progress-bar"><div id="capacityBar" class="progress-fill" style="width:72.5%"></div></div>
+          </div>
+          <div class="telemetry-row"><span>Link Margin</span><strong id="linkMarginValue">5.4 dB</strong></div>
+          <div class="telemetry-row"><span>Active Users</span><strong id="activeUsersValue">12,460</strong></div>
+        </section>
+
+        <section class="data-panel">
+          <div class="panel-header"><div><small>ENGINEERING ANALYSIS</small><h2>Telemetry Trend</h2></div></div>
+          <canvas id="trendCanvas" width="640" height="220"></canvas>
+          <div class="trend-summary">
+            <span>Actual</span><strong id="trendActual">--</strong>
+            <span>Expected</span><strong id="trendExpected">--</strong>
+            <span>Forecast</span><strong id="trendForecast">--</strong>
+          </div>
+        </section>
+      </aside>
+    </main>
+
+    <section class="event-log-section">
+      <div class="event-log-header">
+        <div><small>OPERATIONS</small><h2>Event Log</h2></div>
+        <span class="live-indicator">● LIVE TELEMETRY</span>
+      </div>
+      <div id="eventLog" class="event-log"></div>
+    </section>
+  </div>
+
+  <script src="./script.js?v=1"></script>
+</body>
+</html>
