@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NTN Ontology Operations Framework - Cesium</title>
+<script src="https://cdn.jsdelivr.net/npm/cesium@1.143.0/Build/Cesium/Cesium.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/cesium@1.143.0/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
+
+  <style>
+    * { box-sizing: border-box; }
+    html, body { width:100%; height:100%; margin:0; padding:0; overflow:hidden; font-family: Arial, Helvetica, sans-serif; background:#040b14; color:#fff; }
+    .app { width:100%; height:100vh; display:grid; grid-template-rows: 74px 1fr 170px; background:#040b14; }
+    .topbar { display:flex; align-items:center; justify-content:space-between; padding:14px 18px; background:linear-gradient(90deg,#071120,#0a1c31); border-bottom:1px solid rgba(80,180,255,.18); }
+    .brand h1 { margin:0; font-size:22px; }
+    .brand p { margin:6px 0 0; font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:#8aa2b7; }
+    .statusbox { display:flex; align-items:center; gap:10px; padding:10px 14px; border:1px solid rgba(255,255,255,.08); border-radius:10px; background:rgba(255,255,255,.03); min-width:180px; }
+    .statusdot { width:10px; height:10px; border-radius:50%; background:#43e18a; box-shadow:0 0 12px rgba(67,225,138,.8); }
+    .statusmeta span { display:block; font-size:9px; letter-spacing:.12em; text-transform:uppercase; color:#8aa2b7; }
+    .statusmeta strong { display:block; margin-top:4px; color:#43e18a; }
+
+    .workspace { min-height:0; display:grid; grid-template-columns: 275px minmax(0,1fr) 340px; gap:1px; background:rgba(80,180,255,.12); }
+    .left, .right { min-height:0; overflow-y:auto; background:#08131f; padding:14px; }
+    .center { position:relative; min-width:0; min-height:0; background:#000; }
+    #cesiumContainer { position:absolute; inset:0; }
+
+    .section-label { margin:0 0 10px; font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:#42cff8; font-weight:700; }
+    .scenario-list { display:grid; gap:8px; margin-bottom:16px; }
+    .scenario-btn { width:100%; text-align:left; padding:10px; border:1px solid rgba(255,255,255,.08); border-radius:8px; background:rgba(255,255,255,.025); color:#fff; cursor:pointer; transition:.18s ease; }
+    .scenario-btn:hover { transform:translateX(3px); border-color:rgba(66,207,248,.55); }
+    .scenario-btn.active { background:rgba(66,207,248,.10); border-color:#42cff8; }
+    .scenario-btn b { display:block; font-size:11px; margin-bottom:4px; }
+    .scenario-btn small { color:#89a0b5; font-size:9px; line-height:1.35; }
+
+    .panel { margin-bottom:12px; padding:14px; border:1px solid rgba(255,255,255,.07); border-radius:10px; background:linear-gradient(145deg,rgba(16,31,49,.97),rgba(8,18,30,.97)); }
+    .panel h2 { margin:0 0 10px; font-size:15px; }
+    .panel p { margin:0; color:#a9bfce; font-size:11px; line-height:1.5; }
+
+    .info-row, .metric-row { display:flex; justify-content:space-between; gap:16px; align-items:center; padding:8px 0; border-bottom:1px solid rgba(255,255,255,.05); }
+    .info-row:last-child, .metric-row:last-child { border-bottom:0; }
+    .info-row span, .metric-row span { color:#89a0b5; font-size:11px; }
+    .info-row strong, .metric-row strong { font-size:12px; }
+
+    .action-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .action-btn, .camera-btn { padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.04); color:#e8f3fb; cursor:pointer; font-size:11px; transition:.18s ease; }
+    .action-btn:hover, .camera-btn:hover { border-color:rgba(66,207,248,.6); }
+    .action-btn.primary { background:#42cff8; color:#04111d; border-color:#42cff8; font-weight:700; }
+    .action-btn.danger { background:rgba(255,100,100,.08); border-color:rgba(255,100,100,.5); color:#ffd2d2; }
+
+    .overlay { position:absolute; z-index:10; background:rgba(7,17,29,.90); backdrop-filter: blur(8px); border:1px solid rgba(95,190,255,.20); border-radius:10px; }
+    .camera-controls { top:18px; left:18px; display:flex; flex-direction:column; gap:8px; padding:8px; }
+    .camera-btn.active { background:rgba(66,207,248,.12); color:#42cff8; border-color:#42cff8; }
+    .viewer-info { left:18px; bottom:18px; width:230px; padding:12px 14px; }
+    .viewer-info .info-row span, .viewer-info .info-row strong { font-size:11px; }
+    .scenario-banner { top:18px; right:18px; width:290px; padding:14px; }
+    .scenario-banner h3 { margin:0 0 6px; font-size:16px; }
+    .scenario-banner p { margin:0; color:#a8bed0; font-size:11px; line-height:1.45; }
+
+    .bottom { display:grid; grid-template-columns: minmax(0,1.1fr) 360px; gap:1px; background:rgba(80,180,255,.12); border-top:1px solid rgba(80,180,255,.12); }
+    .logpanel { min-width:0; background:#06111c; padding:12px 15px; }
+    .logheader { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+    .logheader h2 { margin:0; font-size:14px; }
+    .logheader span { color:#8aa2b7; font-size:9px; letter-spacing:.1em; text-transform:uppercase; }
+    .loglist { height:120px; overflow-y:auto; font-family:"Courier New", monospace; }
+    .logentry { display:grid; grid-template-columns: 75px 65px 1fr; gap:8px; padding:5px 0; border-bottom:1px solid rgba(255,255,255,.04); font-size:10px; color:#bed0dc; }
+    .logentry time { color:#668094; }
+    .logentry b { color:#42cff8; }
+    .logentry.warning b { color:#ffbd57; }
+    .logentry.critical b { color:#ff6464; }
+    .mini-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .mini-card { padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,.07); background:linear-gradient(145deg,rgba(16,31,49,.97),rgba(8,18,30,.97)); }
+    .mini-card span { display:block; font-size:9px; text-transform:uppercase; letter-spacing:.12em; color:#89a0b5; }
+    .mini-card strong { display:block; margin-top:6px; font-size:16px; }
+    .slider-wrap { margin-top:8px; }
+    input[type=range] { width:100%; accent-color:#42cff8; }
+    .nominal { color:#43e18a !important; }
+    .warning-text { color:#ffbd57 !important; }
+    .critical-text { color:#ff6464 !important; }
+    .cesium-viewer-bottom, .cesium-widget-credits { display:none !important; }
+    .cesium-button { background:rgba(7,20,36,.92)!important; border-color:rgba(255,255,255,.15)!important; }
+    .cesium-viewer-toolbar { top:10px; right:10px; }
+
+    @media (max-width: 1100px) {
+      .workspace { grid-template-columns:240px minmax(0,1fr) 300px; }
+      .bottom { grid-template-columns:1fr; }
+    }
+    @media (max-width: 900px) {
+      body { overflow:auto; }
+      .app { height:auto; min-height:100vh; grid-template-rows:auto auto auto; }
+      .workspace { display:block; }
+      .center { height:540px; }
+      .scenario-banner { width:240px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <h1>NTN Ontology Operations Framework</h1>
+        <p>Cesium globe · LEO orbit · architecture scenarios · decision support</p>
+      </div>
+      <div class="statusbox">
+        <div id="statusDot" class="statusdot"></div>
+        <div class="statusmeta">
+          <span>Operational state</span>
+          <strong id="globalStatus" class="nominal">NOMINAL</strong>
+        </div>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <aside class="left">
+        <p class="section-label">Architecture scenarios</p>
+        <div id="scenarioList" class="scenario-list"></div>
+
+        <div class="panel">
+          <p class="section-label">Scenario summary</p>
+          <h2 id="leftScenarioTitle">Scenario 1</h2>
+          <p id="leftScenarioDescription"></p>
+        </div>
+
+        <div class="panel">
+          <p class="section-label">Traffic load</p>
+          <div class="info-row"><span>Current demand</span><strong id="trafficValue">65 %</strong></div>
+          <div class="slider-wrap"><input id="trafficSlider" type="range" min="20" max="100" value="65" /></div>
+          <div class="info-row"><span>Forecast tendency</span><strong id="trafficTrend">Stable</strong></div>
+        </div>
+
+        <div class="panel">
+          <p class="section-label">Quick explanation</p>
+          <div class="info-row"><span>Service link</span><strong style="color:#42cff8;">UE ↔ satellite</strong></div>
+          <div class="info-row"><span>Feeder link</span><strong style="color:#ffbd57;">satellite ↔ CN</strong></div>
+          <div class="info-row"><span>ISL</span><strong style="color:#d2a9ff;">satellite ↔ satellite</strong></div>
+          <div class="info-row"><span>Ground link</span><strong style="color:#43e18a;">UE ↔ DU/CU/CN</strong></div>
+        </div>
+      </aside>
+
+      <section class="center">
+        <div id="cesiumContainer"></div>
+
+        <div class="overlay camera-controls">
+          <button id="btnAll" class="camera-btn active">ALL</button>
+          <button id="btnUE" class="camera-btn">UE</button>
+          <button id="btnSat" class="camera-btn">LEO</button>
+          <button id="btnCN" class="camera-btn">CN</button>
+        </div>
+
+        <div class="overlay viewer-info">
+          <div class="info-row"><span>Simulation</span><strong id="runState">LIVE</strong></div>
+          <div class="info-row"><span>Mission time</span><strong id="missionClock">00:00:00</strong></div>
+          <div class="info-row"><span>Visible objects</span><strong id="objectCount">0</strong></div>
+          <div class="info-row"><span>Active links</span><strong id="linkCount">0</strong></div>
+          <div class="info-row"><span>Globe</span><strong id="globeState" class="nominal">VISIBLE</strong></div>
+        </div>
+
+        <div class="overlay scenario-banner">
+          <p class="section-label">Current architecture</p>
+          <h3 id="bannerTitle">Scenario 1</h3>
+          <p id="bannerText"></p>
+        </div>
+      </section>
+
+      <aside class="right">
+        <div class="panel">
+          <p class="section-label">Performance metrics</p>
+          <div class="metric-row"><span>End-to-end latency</span><strong id="latencyMetric">--</strong></div>
+          <div class="metric-row"><span>Throughput</span><strong id="throughputMetric">--</strong></div>
+          <div class="metric-row"><span>On-board processing</span><strong id="processingMetric">--</strong></div>
+          <div class="metric-row"><span>Availability</span><strong id="availabilityMetric">--</strong></div>
+          <div class="metric-row"><span>Model confidence</span><strong id="confidenceMetric">--</strong></div>
+        </div>
+
+        <div class="panel">
+          <p class="section-label">Selected object</p>
+          <div class="metric-row"><span>Name</span><strong id="selectedName">LEO Satellite</strong></div>
+          <div class="metric-row"><span>Function</span><strong id="selectedFunction">Transport</strong></div>
+          <div class="metric-row"><span>Status</span><strong id="selectedStatus" class="nominal">NOMINAL</strong></div>
+          <div class="metric-row"><span>Processing load</span><strong id="selectedLoad">--</strong></div>
+        </div>
+
+        <div class="panel">
+          <p class="section-label">Available actions</p>
+          <div class="action-grid">
+            <button id="optimizeBtn" class="action-btn primary">Optimize traffic</button>
+            <button id="failureBtn" class="action-btn danger">Simulate failure</button>
+            <button id="recoveryBtn" class="action-btn">Execute recovery</button>
+            <button id="islBtn" class="action-btn">Activate ISL</button>
+            <button id="moveCuBtn" class="action-btn">Move CU to ground</button>
+            <button id="reportBtn" class="action-btn">Generate report</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <p class="section-label">Decision support</p>
+          <h2 id="decisionTitle">Maintain current architecture</h2>
+          <p id="decisionText">Current telemetry is consistent with the scenario model and no intervention is required.</p>
+        </div>
+      </aside>
+    </main>
+
+    <footer class="bottom">
+      <section class="logpanel">
+        <div class="logheader"><h2>Operational Event Log</h2><span>Live stream</span></div>
+        <div id="eventLog" class="loglist"></div>
+      </section>
+      <section class="logpanel">
+        <div class="logheader"><h2>Quick view</h2><span>Model summary</span></div>
+        <div class="mini-grid">
+          <div class="mini-card"><span>Architecture</span><strong id="quickArchitecture">S1</strong></div>
+          <div class="mini-card"><span>Risk</span><strong id="quickRisk" class="nominal">LOW</strong></div>
+          <div class="mini-card"><span>ISL route</span><strong id="quickISL">OFF</strong></div>
+          <div class="mini-card"><span>Failure state</span><strong id="quickFailure">NONE</strong></div>
+        </div>
+      </section>
+    </footer>
+  </div>
+
+  <script>
+    let viewer;
+
+    try {
+      viewer = new Cesium.Viewer("cesiumContainer", {
+        animation: false,
+        timeline: false,
+        geocoder: false,
+        homeButton: true,
+        sceneModePicker: false,
+        navigationHelpButton: false,
+        fullscreenButton: true,
+        baseLayerPicker: true,
+        infoBox: false,
+        selectionIndicator: false
+      });
+    } catch (error) {
+      console.error("Cesium Viewer initialization failed:", error);
+      document.getElementById("bannerTitle").textContent = "CESIUM INITIALIZATION ERROR";
+      document.getElementById("bannerText").textContent = error.message;
+      throw error;
+    }
+
+    viewer.scene.backgroundColor = Cesium.Color.BLACK;
+    viewer.scene.globe.show = true;
+    viewer.scene.globe.baseColor = Cesium.Color.fromCssColorString("#0b69a3");
+    viewer.scene.globe.enableLighting = false;
+    viewer.scene.globe.depthTestAgainstTerrain = false;
+    viewer.scene.skyAtmosphere.show = true;
+    viewer.scene.skyBox.show = true;
+
+    const LEO_ALTITUDE = 1200000;
+
+
+    function showEarthOverview(duration = 0) {
+      // First use Cesium's built-in home view, which is known to frame Earth.
+      if (duration > 0) {
+        viewer.camera.flyHome(duration);
+      } else {
+        viewer.camera.flyHome(0);
+      }
+
+      // Fallback in case a previous camera state was preserved.
+      setTimeout(function () {
+        if (viewer.camera.positionCartographic.height < 7000000) {
+          viewer.camera.setView({
+            destination: Cesium.Cartesian3.fromDegrees(0, 15, 18000000),
+            orientation: {
+              heading: 0,
+              pitch: Cesium.Math.toRadians(-90),
+              roll: 0
+            }
+          });
+        }
+        viewer.scene.globe.show = true;
+        viewer.scene.requestRender();
+      }, duration > 0 ? duration * 1000 + 100 : 100);
+    }
+
+    showEarthOverview(0);
+
+    window.addEventListener("load", function () {
+      setTimeout(function () {
+        viewer.forceResize();
+        viewer.scene.globe.show = true;
+        showEarthOverview(0);
+      }, 300);
+    });
+
+    let satAngle = -30;
+
+    let sat2Angle = 50;
+    let previousTime = performance.now();
+
+    const state = {
+      selectedScenarioId: 1,
+      selectedObject: "satA",
+      traffic: 65,
+      failureObject: null,
+      islActive: false,
+      movedCuToGround: false,
+      optimized: false,
+      running: true,
+      currentMetrics: null
+    };
+
+    const scenarios = {
+      1: {
+        name: "Regenerative payload",
+        short: "UE → satellite [DU+CU] → CN",
+        description: "The LEO satellite hosts both DU and CU functions and performs regenerative processing before forwarding traffic to the core network.",
+        baseLatency: 38, baseThroughput: 720, processing: 78, availability: 99.35, confidence: 94,
+        objects: {
+          ue: { name: "UE Cluster", function: "User Equipment", kind: "ground", lon: -6, lat: 4, color: Cesium.Color.CYAN },
+          satA: { name: "LEO Satellite", function: "DU + CU", kind: "sat" },
+          cn: { name: "Core Network", function: "CN", kind: "ground", lon: 12, lat: 43, color: Cesium.Color.LIME }
+        },
+        links: [ ["ue","satA","service"], ["satA","cn","feeder"] ]
+      },
+      2: {
+        name: "Satellite DU / Ground CU",
+        short: "UE → satellite DU → ground CU → CN",
+        description: "The DU is hosted on the LEO satellite while the CU remains on the ground, reducing on-board processing compared with a fully regenerative payload.",
+        baseLatency: 48, baseThroughput: 660, processing: 61, availability: 99.15, confidence: 92,
+        objects: {
+          ue: { name: "UE Cluster", function: "User Equipment", kind: "ground", lon: -6, lat: 4, color: Cesium.Color.CYAN },
+          satA: { name: "LEO Satellite", function: "DU", kind: "sat" },
+          cu: { name: "Ground CU", function: "CU", kind: "ground", lon: 0, lat: 36, color: Cesium.Color.ORANGE },
+          cn: { name: "Core Network", function: "CN", kind: "ground", lon: 12, lat: 43, color: Cesium.Color.LIME }
+        },
+        links: [ ["ue","satA","service"], ["satA","cu","feeder"], ["cu","cn","ground"] ]
+      },
+      3: {
+        name: "Distributed DU/CU in space",
+        short: "UE → satellite DU → satellite CU → CN",
+        description: "DU and CU functions are distributed across separate LEO satellites and interconnected through an inter-satellite link.",
+        baseLatency: 55, baseThroughput: 610, processing: 68, availability: 98.95, confidence: 90,
+        objects: {
+          ue: { name: "UE Cluster", function: "User Equipment", kind: "ground", lon: -6, lat: 4, color: Cesium.Color.CYAN },
+          satA: { name: "Satellite A", function: "DU", kind: "sat" },
+          satB: { name: "Satellite B", function: "CU", kind: "sat2" },
+          cn: { name: "Core Network", function: "CN", kind: "ground", lon: 12, lat: 43, color: Cesium.Color.LIME }
+        },
+        links: [ ["ue","satA","service"], ["satA","satB","isl"], ["satB","cn","feeder"] ]
+      },
+      4: {
+        name: "Regenerative satellite with relay",
+        short: "UE → [DU+CU] satellite → relay satellite → CN",
+        description: "A regenerative LEO satellite hosts DU and CU functions while a second relay satellite extends the feeder path through an inter-satellite link.",
+        baseLatency: 62, baseThroughput: 570, processing: 75, availability: 98.75, confidence: 89,
+        objects: {
+          ue: { name: "UE Cluster", function: "User Equipment", kind: "ground", lon: -6, lat: 4, color: Cesium.Color.CYAN },
+          satA: { name: "Satellite A", function: "DU + CU", kind: "sat" },
+          satB: { name: "Relay Satellite", function: "Transport", kind: "sat2" },
+          cn: { name: "Core Network", function: "CN", kind: "ground", lon: 12, lat: 43, color: Cesium.Color.LIME }
+        },
+        links: [ ["ue","satA","service"], ["satA","satB","isl"], ["satB","cn","feeder"] ]
+      },
+      5: {
+        name: "Mobile DU with satellite CU",
+        short: "UE → mobile DU → satellite CU → relay → CN",
+        description: "A mobile ground platform hosts the DU while the CU is deployed in the LEO satellite, enabling temporary or emergency service deployment.",
+        baseLatency: 70, baseThroughput: 520, processing: 57, availability: 98.45, confidence: 87,
+        objects: {
+          ue: { name: "UE Cluster", function: "User Equipment", kind: "ground", lon: -6, lat: 4, color: Cesium.Color.CYAN },
+          mobile: { name: "Mobile Platform", function: "DU", kind: "ground", lon: -2, lat: 10, color: Cesium.Color.YELLOW },
+          satA: { name: "Satellite A", function: "CU", kind: "sat" },
+          satB: { name: "Relay Satellite", function: "Transport", kind: "sat2" },
+          cn: { name: "Core Network", function: "CN", kind: "ground", lon: 12, lat: 43, color: Cesium.Color.LIME }
+        },
+        links: [ ["ue","mobile","ground"], ["mobile","satA","service"], ["satA","satB","isl"], ["satB","cn","feeder"] ]
+      },
+      6: {
+        name: "Mobile DU+CU with satellite relays",
+        short: "UE → mobile [DU+CU] → satellite relays → CN",
+        description: "DU and CU are both hosted on a mobile ground platform while the LEO satellites provide transport to the core network.",
+        baseLatency: 76, baseThroughput: 490, processing: 34, availability: 98.10, confidence: 86,
+        objects: {
+          ue: { name: "UE Cluster", function: "User Equipment", kind: "ground", lon: -6, lat: 4, color: Cesium.Color.CYAN },
+          mobile: { name: "Mobile Platform", function: "DU + CU", kind: "ground", lon: -2, lat: 10, color: Cesium.Color.YELLOW },
+          satA: { name: "Satellite A", function: "Relay", kind: "sat" },
+          satB: { name: "Satellite B", function: "Relay", kind: "sat2" },
+          cn: { name: "Core Network", function: "CN", kind: "ground", lon: 12, lat: 43, color: Cesium.Color.LIME }
+        },
+        links: [ ["ue","mobile","ground"], ["mobile","satA","service"], ["satA","satB","isl"], ["satB","cn","feeder"] ]
+      }
+    };
+
+    const entityRegistry = {};
+    const linkRegistry = [];
+
+    function currentScenario() { return scenarios[state.selectedScenarioId]; }
+
+    function satAPosition() {
+      return Cesium.Cartesian3.fromDegrees(satAngle, 14 * Math.sin(Cesium.Math.toRadians(satAngle * 1.2)), LEO_ALTITUDE);
+    }
+    function satBPosition() {
+      return Cesium.Cartesian3.fromDegrees(sat2Angle, 22 * Math.sin(Cesium.Math.toRadians(sat2Angle * 1.05)), LEO_ALTITUDE + 120000);
+    }
+    function objectPosition(id) {
+      const obj = currentScenario().objects[id];
+      if (!obj) return null;
+      if (obj.kind === "sat") return satAPosition();
+      if (obj.kind === "sat2") return satBPosition();
+      return Cesium.Cartesian3.fromDegrees(obj.lon, obj.lat, 0);
+    }
+
+    function createOrbit(name, altitude, color, amplitudeDeg, phaseDeg) {
+      const positions = [];
+      for (let lon = -180; lon <= 180; lon += 2) {
+        const lat = amplitudeDeg * Math.sin(Cesium.Math.toRadians(lon + phaseDeg));
+        positions.push(Cesium.Cartesian3.fromDegrees(lon, lat, altitude));
+      }
+      return viewer.entities.add({
+        name,
+        polyline: {
+          positions,
+          width: 2.5,
+          material: color,
+          arcType: Cesium.ArcType.NONE
+        }
+      });
+    }
+
+    const leoOrbit1 = createOrbit("LEO Orbit A", LEO_ALTITUDE, Cesium.Color.CYAN.withAlpha(0.85), 14, 0);
+    const leoOrbit2 = createOrbit("LEO Orbit B", LEO_ALTITUDE + 120000, Cesium.Color.ORANGE.withAlpha(0.65), 22, 35);
+
+    function createNodeEntity(id, obj) {
+      const color = obj.color || (obj.kind === "sat" ? Cesium.Color.CYAN : obj.kind === "sat2" ? Cesium.Color.ORANGE : Cesium.Color.WHITE);
+      const entity = viewer.entities.add({
+        id: `node-${id}`,
+        name: obj.name,
+        position: new Cesium.CallbackPositionProperty(function() { return objectPosition(id); }, false),
+        point: { pixelSize: obj.kind.startsWith("sat") ? 16 : 14, color, outlineColor: Cesium.Color.BLACK, outlineWidth: 2 },
+        label: {
+          text: obj.name + "\n" + obj.function,
+          font: "bold 14px Arial",
+          fillColor: color,
+          outlineColor: Cesium.Color.BLACK,
+          outlineWidth: 3,
+          style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+          showBackground: true,
+          backgroundColor: Cesium.Color.BLACK.withAlpha(0.75),
+          pixelOffset: new Cesium.Cartesian2(0, -34),
+          horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+          verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+          disableDepthTestDistance: Number.POSITIVE_INFINITY
+        }
+      });
+      entityRegistry[id] = entity;
+      entity.descriptionData = obj;
+      entity.isNodeObject = true;
+      return entity;
+    }
+
+    function getLinkMaterial(type) {
+      if (type === "service") return Cesium.Color.CYAN.withAlpha(0.92);
+      if (type === "feeder") return Cesium.Color.ORANGE.withAlpha(0.92);
+      if (type === "isl") return new Cesium.PolylineDashMaterialProperty({ color: Cesium.Color.VIOLET.withAlpha(0.9), dashLength: 12 });
+      return Cesium.Color.LIME.withAlpha(0.92);
+    }
+
+    function createLinkEntity(from, to, type, index) {
+      const entity = viewer.entities.add({
+        id: `link-${from}-${to}-${index}`,
+        polyline: {
+          positions: new Cesium.CallbackProperty(function() {
+            const a = objectPosition(from);
+            const b = objectPosition(to);
+            return a && b ? [a, b] : [];
+          }, false),
+          width: type === "isl" ? 2.5 : 3.5,
+          material: getLinkMaterial(type)
+        }
+      });
+      linkRegistry.push(entity);
+      return entity;
+    }
+
+    function clearScenarioEntities() {
+      Object.values(entityRegistry).forEach(entity => viewer.entities.remove(entity));
+      linkRegistry.forEach(entity => viewer.entities.remove(entity));
+      Object.keys(entityRegistry).forEach(k => delete entityRegistry[k]);
+      linkRegistry.length = 0;
+    }
+
+    function renderScenario() {
+      clearScenarioEntities();
+      const scenario = currentScenario();
+      Object.entries(scenario.objects).forEach(([id, obj]) => createNodeEntity(id, obj));
+      let links = [...scenario.links];
+      if (state.islActive && !links.some(l => l[2] === "isl")) {
+        if (scenario.objects.satA && scenario.objects.satB) links.push(["satA","satB","isl"]);
+      }
+      links.forEach((link, i) => createLinkEntity(link[0], link[1], link[2], i));
+
+      document.getElementById("leftScenarioTitle").textContent = `Scenario ${state.selectedScenarioId}: ${scenario.name}`;
+      document.getElementById("leftScenarioDescription").textContent = scenario.description;
+      document.getElementById("bannerTitle").textContent = `Scenario ${state.selectedScenarioId}: ${scenario.name}`;
+      document.getElementById("bannerText").textContent = scenario.short;
+      document.getElementById("quickArchitecture").textContent = `S${state.selectedScenarioId}`;
+      document.getElementById("objectCount").textContent = Object.keys(scenario.objects).length;
+      document.getElementById("linkCount").textContent = links.length;
+      buildScenarioButtons();
+      updateSelectedInfo();
+      flyAll();
+    }
+
+    function buildScenarioButtons() {
+      const holder = document.getElementById("scenarioList");
+      holder.innerHTML = "";
+      Object.entries(scenarios).forEach(([id, scenario]) => {
+        const btn = document.createElement("button");
+        btn.className = "scenario-btn" + (Number(id) === state.selectedScenarioId ? " active" : "");
+        btn.innerHTML = `<b>(${id}) ${scenario.name}</b><small>${scenario.short}</small>`;
+        btn.addEventListener("click", function() {
+          state.selectedScenarioId = Number(id);
+          state.failureObject = null;
+          state.islActive = false;
+          state.movedCuToGround = false;
+          state.optimized = false;
+          state.selectedObject = currentScenario().objects.satA ? "satA" : Object.keys(currentScenario().objects)[0];
+          renderScenario();
+          updateMetrics();
+          addLog("ARCH", `Scenario ${id} selected: ${scenario.name}`);
+        });
+        holder.appendChild(btn);
+      });
+    }
+
+    function objectLoad(id) {
+      const obj = currentScenario().objects[id];
+      if (!obj) return 0;
+      if (state.failureObject === id) return 99;
+      const baseProcessing = currentScenario().processing;
+      const base = obj.function.includes("DU + CU") ? baseProcessing :
+                   obj.function === "DU" ? baseProcessing * 0.72 :
+                   obj.function === "CU" ? baseProcessing * 0.62 :
+                   obj.function === "Transport" || obj.function === "Relay" ? 25 :
+                   obj.function === "CN" ? 43 : 36;
+      const modifier = 0.55 + state.traffic / 150;
+      let value = base * modifier;
+      if (state.movedCuToGround && obj.function === "CU") value += 10;
+      if (state.optimized) value -= 8;
+      return Math.max(8, Math.min(99, value));
+    }
+
+    function updateSelectedInfo() {
+      const obj = currentScenario().objects[state.selectedObject];
+      if (!obj) return;
+      const status = state.failureObject === state.selectedObject ? "CRITICAL" : objectLoad(state.selectedObject) > 86 ? "WARNING" : "NOMINAL";
+      document.getElementById("selectedName").textContent = obj.name;
+      document.getElementById("selectedFunction").textContent = obj.function;
+      const selectedStatus = document.getElementById("selectedStatus");
+      selectedStatus.textContent = status;
+      selectedStatus.className = status === "CRITICAL" ? "critical-text" : status === "WARNING" ? "warning-text" : "nominal";
+      document.getElementById("selectedLoad").textContent = objectLoad(state.selectedObject).toFixed(1) + " %";
+    }
+
+    function computeMetrics() {
+      const s = currentScenario();
+      const failPenalty = state.failureObject ? 24 : 0;
+      const optimizeBenefit = state.optimized ? 8 : 0;
+      const islPenalty = state.islActive ? 4 : 0;
+      const moveCuPenalty = state.movedCuToGround ? 7 : 0;
+      const latency = s.baseLatency + state.traffic * 0.12 + failPenalty + islPenalty + moveCuPenalty - optimizeBenefit;
+      const throughput = s.baseThroughput * (0.48 + state.traffic / 155) - failPenalty * 5 + optimizeBenefit * 14;
+      const processing = Math.min(99, s.processing * (0.55 + state.traffic / 142) + (state.failureObject ? 8 : 0) - (state.movedCuToGround ? 10 : 0) - (state.optimized ? 10 : 0));
+      const availability = Math.max(91, s.availability - Math.max(0, state.traffic - 75) * 0.025 - (state.failureObject ? 3.10 : 0) + (state.islActive ? 0.35 : 0));
+      const confidence = Math.max(72, s.confidence - (state.failureObject ? 9 : 0) + (state.optimized ? 2 : 0));
+      return { latency, throughput, processing, availability, confidence };
+    }
+
+    function updateMetrics() {
+      state.currentMetrics = computeMetrics();
+      document.getElementById("latencyMetric").textContent = state.currentMetrics.latency.toFixed(1) + " ms";
+      document.getElementById("throughputMetric").textContent = Math.max(0, state.currentMetrics.throughput).toFixed(0) + " Mbps";
+      document.getElementById("processingMetric").textContent = state.currentMetrics.processing.toFixed(1) + " %";
+      document.getElementById("availabilityMetric").textContent = state.currentMetrics.availability.toFixed(2) + " %";
+      document.getElementById("confidenceMetric").textContent = state.currentMetrics.confidence.toFixed(0) + " %";
+      updateGlobalStatus();
+      updateDecisionSupport();
+      updateSelectedInfo();
+    }
+
+    function updateGlobalStatus() {
+      const critical = !!state.failureObject;
+      const warning = !critical && (state.currentMetrics.processing > 86 || state.traffic > 90);
+      const statusEl = document.getElementById("globalStatus");
+      const dot = document.getElementById("statusDot");
+      const quickRisk = document.getElementById("quickRisk");
+      if (critical) {
+        statusEl.textContent = "CRITICAL";
+        statusEl.className = "critical-text";
+        dot.style.background = "#ff6464";
+        dot.style.boxShadow = "0 0 12px rgba(255,100,100,.85)";
+        quickRisk.textContent = "HIGH";
+        quickRisk.className = "critical-text";
+      } else if (warning) {
+        statusEl.textContent = "WARNING";
+        statusEl.className = "warning-text";
+        dot.style.background = "#ffbd57";
+        dot.style.boxShadow = "0 0 12px rgba(255,189,87,.85)";
+        quickRisk.textContent = "MEDIUM";
+        quickRisk.className = "warning-text";
+      } else {
+        statusEl.textContent = "NOMINAL";
+        statusEl.className = "nominal";
+        dot.style.background = "#43e18a";
+        dot.style.boxShadow = "0 0 12px rgba(67,225,138,.85)";
+        quickRisk.textContent = "LOW";
+        quickRisk.className = "nominal";
+      }
+      document.getElementById("quickISL").textContent = state.islActive ? "ON" : "OFF";
+      document.getElementById("quickFailure").textContent = state.failureObject ? state.failureObject.toUpperCase() : "NONE";
+    }
+
+    function updateDecisionSupport() {
+      let title = "Maintain current architecture";
+      let text = "Current telemetry is consistent with the scenario model and no intervention is required.";
+      if (state.failureObject) {
+        title = "Execute recovery and alternate routing";
+        text = `${state.failureObject.toUpperCase()} is in a simulated critical state. Recover the affected object and maintain an alternate route to restore service margin.`;
+      } else if (state.currentMetrics.processing > 84 || state.traffic > 86) {
+        title = "Optimize traffic allocation";
+        text = "Capacity pressure is increasing processing load. Rebalance traffic to preserve headroom on the DU/CU hosting object.";
+      } else if (currentScenario().links.some(l => l[2] === "isl") && !state.islActive) {
+        title = "Maintain ISL readiness";
+        text = "The selected architecture depends on an inter-satellite path. Keep relay health under surveillance and prepare alternate routing.";
+      }
+      document.getElementById("decisionTitle").textContent = title;
+      document.getElementById("decisionText").textContent = text;
+    }
+
+    function addLog(type, message, severity) {
+      const el = document.createElement("div");
+      el.className = "logentry" + (severity ? " " + severity : "");
+      el.innerHTML = `<time>${new Date().toLocaleTimeString("en-GB", { hour12: false })}</time><b>${type}</b><span>${message}</span>`;
+      document.getElementById("eventLog").prepend(el);
+      while (document.getElementById("eventLog").children.length > 12) {
+        document.getElementById("eventLog").removeChild(document.getElementById("eventLog").lastChild);
+      }
+    }
+
+    function formatMissionClock(ms) {
+      const total = Math.floor(ms / 1000);
+      const h = String(Math.floor(total / 3600)).padStart(2, "0");
+      const m = String(Math.floor((total % 3600) / 60)).padStart(2, "0");
+      const s = String(total % 60).padStart(2, "0");
+      return `${h}:${m}:${s}`;
+    }
+
+    const simulationStart = Date.now();
+    setInterval(function() {
+      document.getElementById("missionClock").textContent = formatMissionClock(Date.now() - simulationStart);
+    }, 1000);
+
+    function animateSatellites(currentTime) {
+      const deltaTime = currentTime - previousTime;
+      previousTime = currentTime;
+      if (state.running) {
+        satAngle += 0.008 * deltaTime;
+        sat2Angle += 0.005 * deltaTime;
+        if (satAngle > 180) satAngle = -180;
+        if (sat2Angle > 180) sat2Angle = -180;
+      }
+      requestAnimationFrame(animateSatellites);
+    }
+    requestAnimationFrame(animateSatellites);
+
+    function clearCameraButtons() {
+      document.querySelectorAll('.camera-btn').forEach(btn => btn.classList.remove('active'));
+    }
+    function flyAll() {
+      clearCameraButtons();
+      document.getElementById('btnAll').classList.add('active');
+      showEarthOverview(2.2);
+    }
+    function flyUE() {
+      clearCameraButtons(); document.getElementById('btnUE').classList.add('active');
+      const ue = currentScenario().objects.ue || currentScenario().objects.mobile;
+      viewer.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(ue.lon, ue.lat + 10, 6000000), duration: 1.8 });
+    }
+    function flySat() {
+      clearCameraButtons(); document.getElementById('btnSat').classList.add('active');
+      viewer.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(satAngle, 28, 9000000), duration: 1.8 });
+    }
+    function flyCN() {
+      clearCameraButtons(); document.getElementById('btnCN').classList.add('active');
+      const cn = currentScenario().objects.cn;
+      viewer.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(cn.lon, cn.lat + 8, 6000000), duration: 1.8 });
+    }
+document.getElementById('btnAll').addEventListener('click', flyAll);
+    document.getElementById('btnUE').addEventListener('click', flyUE);
+    document.getElementById('btnSat').addEventListener('click', flySat);
+    document.getElementById('btnCN').addEventListener('click', flyCN);
+
+    document.getElementById('trafficSlider').addEventListener('input', function(e) {
+      state.traffic = Number(e.target.value);
+      document.getElementById('trafficValue').textContent = state.traffic + ' %';
+      document.getElementById('trafficTrend').textContent = state.traffic > 82 ? 'Increasing' : state.traffic < 45 ? 'Light' : 'Stable';
+      updateMetrics();
+    });
+
+    document.getElementById('optimizeBtn').addEventListener('click', function() {
+      state.optimized = true;
+      state.traffic = Math.max(35, state.traffic - 12);
+      document.getElementById('trafficSlider').value = state.traffic;
+      document.getElementById('trafficValue').textContent = state.traffic + ' %';
+      document.getElementById('trafficTrend').textContent = 'Optimized';
+      updateMetrics();
+      addLog('ACTION', 'Traffic optimization executed');
+    });
+
+    document.getElementById('failureBtn').addEventListener('click', function() {
+      state.failureObject = state.selectedObject || 'satA';
+      updateMetrics();
+      addLog('ALARM', `${state.failureObject.toUpperCase()} entered simulated critical state`, 'critical');
+    });
+
+    document.getElementById('recoveryBtn').addEventListener('click', function() {
+      if (!state.failureObject) { addLog('PROC', 'No failed object requires recovery'); return; }
+      addLog('PROC', `Recovery procedure completed for ${state.failureObject.toUpperCase()}`);
+      state.failureObject = null;
+      updateMetrics();
+    });
+
+    document.getElementById('islBtn').addEventListener('click', function() {
+      state.islActive = !state.islActive;
+      renderScenario();
+      updateMetrics();
+      addLog('ROUTE', `Alternate ISL route ${state.islActive ? 'activated' : 'deactivated'}`);
+    });
+
+    document.getElementById('moveCuBtn').addEventListener('click', function() {
+      state.movedCuToGround = !state.movedCuToGround;
+      updateMetrics();
+      addLog('ARCH', `CU placement ${state.movedCuToGround ? 'changed to ground for impact simulation' : 'restored'}`);
+    });
+
+    document.getElementById('reportBtn').addEventListener('click', function() {
+      const m = state.currentMetrics;
+      alert(
+        `SIMULATED PERFORMANCE REPORT\n\n` +
+        `Scenario ${state.selectedScenarioId}: ${currentScenario().name}\n` +
+        `Latency: ${m.latency.toFixed(1)} ms\n` +
+        `Throughput: ${m.throughput.toFixed(0)} Mbps\n` +
+        `Processing: ${m.processing.toFixed(1)} %\n` +
+        `Availability: ${m.availability.toFixed(2)} %\n` +
+        `State: ${document.getElementById('globalStatus').textContent}`
+      );
+      addLog('REPORT', 'On-orbit performance summary generated');
+    });
+
+    const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+    handler.setInputAction(function(click) {
+      const picked = viewer.scene.pick(click.position);
+      if (Cesium.defined(picked) && picked.id && picked.id.isNodeObject) {
+        const entry = Object.entries(entityRegistry).find(([, entity]) => entity === picked.id);
+        if (entry) {
+          state.selectedObject = entry[0];
+          updateSelectedInfo();
+          addLog('SELECT', `${picked.id.name} selected`);
+        }
+      }
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+    setInterval(function() {
+      if (!state.running) return;
+      updateMetrics();
+      const messages = [
+        'Telemetry packet received from spacecraft.',
+        'Satellite health parameters verified.',
+        'Payload performance data updated.',
+        'Capacity utilization assessment completed.',
+        'Topology link model refreshed.'
+      ];
+      if (Math.random() > 0.55) {
+        addLog('INFO', messages[Math.floor(Math.random() * messages.length)]);
+      }
+    }, 3500);
+    renderScenario();
+    setTimeout(function() {
+      viewer.forceResize();
+      viewer.scene.globe.show = true;
+      showEarthOverview(0);
+      const globeState = document.getElementById("globeState");
+      if (globeState) globeState.textContent = viewer.scene.globe.show ? "VISIBLE" : "HIDDEN";
+    }, 500);
+    updateMetrics();
+    addLog('SYS', 'Cesium-based NTN operations framework initialized');
+    addLog('DATA', 'Synthetic telemetry stream connected');
+  </script>
+</body>
+</html>
