@@ -1,0 +1,34 @@
+*{box-sizing:border-box}
+html,body{width:100%;height:100%;margin:0;background:#030811;color:#fff;font-family:Arial,Helvetica,sans-serif;overflow:hidden}
+.app{height:100vh;display:flex;flex-direction:column;background:#030811}
+.top-header{height:86px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:14px 22px;background:linear-gradient(90deg,#07111f,#0b1727);border-bottom:1px solid rgba(80,180,255,.22)}
+.top-header h1{margin:0;font-size:22px}
+.top-header p{margin:7px 0 0;font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:#7f96ad}
+.mission-status{display:flex;align-items:center;gap:12px;min-width:190px;padding:10px 16px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);border-radius:8px}
+.mission-status small{display:block;margin-bottom:4px;color:#7f96ad;letter-spacing:1.2px;font-size:9px}
+.status-dot{width:12px;height:12px;border-radius:50%}.status-dot.nominal{background:#35e08b;box-shadow:0 0 12px rgba(53,224,139,.8)}.status-dot.warning{background:#ffc857}.status-dot.critical{background:#ff5b5b}
+.nominal-text{color:#35e08b}.warning-text{color:#ffc857}.critical-text{color:#ff5b5b}
+.dashboard{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 370px;gap:1px;background:rgba(80,180,255,.12)}
+.map-section{position:relative;min-width:0;min-height:0;overflow:hidden;background:#000}
+#cesiumContainer{position:absolute;inset:0;width:100%;height:100%}
+.orbit-controls{position:absolute;top:20px;left:20px;z-index:20;display:flex;flex-direction:column;gap:8px}
+.orbit-button{width:82px;min-height:38px;border:1px solid rgba(255,255,255,.16);border-radius:6px;background:rgba(5,15,30,.88);color:#c7d7e6;font-weight:bold;cursor:pointer}
+.orbit-button.active,.orbit-button:hover{background:rgba(31,119,180,.38);border-color:rgba(93,200,255,.8);color:#6edbff}
+.mission-info-panel{position:absolute;left:20px;bottom:20px;width:230px;padding:12px 14px;background:rgba(4,13,25,.88);border:1px solid rgba(95,190,255,.2);border-radius:8px;z-index:20}
+.mission-info-panel div{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.mission-info-panel div:last-child{border-bottom:0}.mission-info-panel span{color:#8ca3b8;font-size:11px}.mission-info-panel strong{font-size:11px}
+.architecture-link{position:absolute;right:20px;bottom:20px;z-index:20;padding:11px 16px;border:1px solid rgba(80,200,255,.65);border-radius:7px;background:rgba(30,130,190,.18);color:#62d5ff;text-decoration:none;font-size:11px;font-weight:bold;letter-spacing:.7px}
+.architecture-link:hover{background:rgba(30,130,190,.34);color:#fff}
+.operations-panel{min-height:0;padding:14px;overflow-y:auto;background:#07111f}
+.data-panel{margin-bottom:12px;padding:16px;background:linear-gradient(145deg,rgba(17,33,52,.96),rgba(10,23,39,.96));border:1px solid rgba(105,175,225,.12);border-radius:8px}
+.panel-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px}.panel-header small,.event-log-header small{display:block;margin-bottom:5px;color:#4eb8e8;font-size:9px;font-weight:bold;letter-spacing:1.6px}.panel-header h2,.event-log-header h2{margin:0;font-size:16px}
+.telemetry-row{display:flex;justify-content:space-between;gap:18px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.06)}.telemetry-row span,.telemetry-header span{color:#91a7ba;font-size:12px}.telemetry-row strong,.telemetry-header strong{font-size:13px;font-variant-numeric:tabular-nums}
+.telemetry-item{padding:11px 0 13px;border-bottom:1px solid rgba(255,255,255,.06)}.telemetry-header{display:flex;justify-content:space-between;margin-bottom:8px}
+.progress-bar{height:6px;overflow:hidden;background:rgba(255,255,255,.07);border-radius:20px}.progress-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,#1a87c7,#58c9ee);transition:width .5s ease}
+#trendCanvas{width:100%;height:145px;display:block;background:#081522;border:1px solid rgba(105,175,225,.12);border-radius:7px}
+.trend-summary{display:grid;grid-template-columns:1fr auto;gap:7px;margin-top:10px;font-size:10px}.trend-summary span{color:#8ca3b8}
+.event-log-section{height:170px;flex-shrink:0;padding:14px 20px;background:#060f1b;border-top:1px solid rgba(80,180,255,.18)}
+.event-log-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}.live-indicator{color:#35e08b;font-size:9px;letter-spacing:1px}
+.event-log{height:100px;overflow-y:auto;font-family:"Courier New",monospace}.event-item{display:grid;grid-template-columns:80px 75px 1fr;gap:10px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:10px;color:#b4c2cf}.event-time{color:#62798d}.event-type{font-weight:bold;color:#59bce8}.event-type.warning{color:#ffc857}.event-type.critical{color:#ff5b5b}
+.cesium-viewer-bottom,.cesium-widget-credits{display:none!important}
+@media(max-width:900px){html,body{overflow:auto}.app{height:auto;min-height:100vh}.dashboard{display:block}.map-section{height:520px}.operations-panel{overflow:visible}.event-log-section{height:auto;min-height:170px}}
