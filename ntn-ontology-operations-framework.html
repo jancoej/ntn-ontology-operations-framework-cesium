@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NTN Ontology Operations Framework</title>
+  <title>NTN Ontology Operations Framework - LEO Constellation</title>
 
   <script src="https://cdn.jsdelivr.net/npm/cesium@1.143.0/Build/Cesium/Cesium.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cesium@1.143.0/Build/Cesium/Widgets/widgets.css">
@@ -16,7 +16,7 @@
     .label{margin:0 0 10px;color:#4ec7ef;font-size:9px;font-weight:bold;letter-spacing:1.5px;text-transform:uppercase}.scenario-list{display:grid;gap:7px;margin-bottom:15px}.scenario{padding:10px;border:1px solid rgba(255,255,255,.07);border-radius:8px;background:rgba(255,255,255,.025);color:#fff;text-align:left;cursor:pointer}.scenario.active{border-color:#4ec7ef;background:rgba(78,199,239,.11)}.scenario b{display:block;font-size:11px;margin-bottom:4px}.scenario small{font-size:9px;color:#8ba2b6;line-height:1.35}
     .panel{margin-bottom:11px;padding:14px;border:1px solid rgba(255,255,255,.07);border-radius:9px;background:linear-gradient(145deg,rgba(16,32,51,.97),rgba(8,19,31,.97))}.panel h2{margin:0 0 10px;font-size:15px}.panel p{margin:0;color:#a9bdcc;font-size:10px;line-height:1.5}.row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)}.row:last-child{border-bottom:0}.row span{color:#8da4b7;font-size:10px}.row strong{font-size:11px}
     .actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}.actions button,.cam button{padding:9px;border:1px solid rgba(255,255,255,.08);border-radius:7px;background:rgba(255,255,255,.04);color:#eaf5fc;cursor:pointer;font-size:10px}.actions button:hover,.cam button:hover{border-color:#4ec7ef}.actions .primary{background:#4ec7ef;color:#04111d;font-weight:bold}.actions .danger{border-color:rgba(255,91,91,.55);color:#ffd4d4;background:rgba(255,91,91,.08)}
-    .overlay{position:absolute;z-index:10;background:rgba(5,15,28,.9);border:1px solid rgba(80,190,255,.2);border-radius:9px;backdrop-filter:blur(6px)}.cam{left:18px;top:18px;display:flex;flex-direction:column;gap:7px;padding:8px}.cam button.active{color:#4ec7ef;border-color:#4ec7ef;background:rgba(78,199,239,.12)}.info{left:18px;bottom:18px;width:225px;padding:12px}.banner{right:18px;top:18px;width:300px;padding:14px}.banner h2{margin:0 0 7px;font-size:16px}.banner p{margin:0;color:#a9bdcc;font-size:10px;line-height:1.45}
+    .overlay{position:absolute;z-index:10;background:rgba(5,15,28,.9);border:1px solid rgba(80,190,255,.2);border-radius:9px;backdrop-filter:blur(6px)}.cam{left:18px;top:18px;display:flex;flex-direction:column;gap:7px;padding:8px}.cam button.active{color:#4ec7ef;border-color:#4ec7ef;background:rgba(78,199,239,.12)}.info{left:18px;bottom:18px;width:260px;padding:12px}.banner{right:18px;top:18px;width:300px;padding:14px}.banner h2{margin:0 0 7px;font-size:16px}.banner p{margin:0;color:#a9bdcc;font-size:10px;line-height:1.45}
     .bottom{display:grid;grid-template-columns:minmax(0,1fr) 365px;gap:1px;background:rgba(80,180,255,.12);border-top:1px solid rgba(80,180,255,.12)}.logpanel{padding:12px 15px;background:#06111c}.loghead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.loghead h2{margin:0;font-size:13px}.loghead span{color:#8199ac;font-size:8px}.log{height:105px;overflow-y:auto;font-family:"Courier New",monospace}.event{display:grid;grid-template-columns:75px 60px 1fr;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:9px;color:#b8c9d5}.event time{color:#657d90}.event b{color:#4ec7ef}.event.critical b{color:#ff5b5b}
     .summary{display:grid;grid-template-columns:1fr 1fr;gap:8px}.card{padding:12px;border:1px solid rgba(255,255,255,.07);border-radius:8px;background:rgba(255,255,255,.025)}.card span{display:block;color:#879fb3;font-size:8px;text-transform:uppercase}.card strong{display:block;margin-top:6px;font-size:15px}.nominal{color:#35e08b!important}.warning{color:#ffc857!important}.critical{color:#ff5b5b!important}
     input[type=range]{width:100%;accent-color:#4ec7ef}.cesium-viewer-bottom,.cesium-widget-credits{display:none!important}
@@ -26,7 +26,7 @@
 <body>
 <div class="app">
   <header class="top">
-    <div><h1>NTN Ontology Operations Framework</h1><p>Cesium globe · LEO architecture · objects · relationships · actions</p></div>
+    <div><h1>NTN Ontology Operations Framework</h1><p>Cesium globe · 12-satellite LEO constellation · automatic handover · NTN architecture</p></div>
     <div class="state"><small>OPERATIONAL STATE</small><strong id="globalStatus">NOMINAL</strong></div>
   </header>
 
@@ -55,7 +55,10 @@
         <div class="row"><span>Simulation</span><strong>LIVE</strong></div>
         <div class="row"><span>Mission time</span><strong id="missionClock">00:00:00</strong></div>
         <div class="row"><span>UE coverage</span><strong id="coverageState" class="nominal">CHECKING</strong></div>
+        <div class="row"><span>Serving satellite</span><strong id="activeSatelliteName">--</strong></div>
         <div class="row"><span>Elevation angle</span><strong id="coverageElevation">--</strong></div>
+        <div class="row"><span>Constellation</span><strong id="constellationSize">12 LEO</strong></div>
+        <div class="row"><span>Handovers</span><strong id="handoverCount">0</strong></div>
         <div class="row"><span>Objects</span><strong id="objectCount">0</strong></div>
         <div class="row"><span>Links</span><strong id="linkCount">0</strong></div>
       </div>
@@ -114,11 +117,13 @@ viewer.scene.globe.baseColor=Cesium.Color.DARKSLATEBLUE;
 viewer.scene.globe.enableLighting=false;
 
 const ALT=1200000;
-let satLon=-28,sat2Lon=45,prev=performance.now();
+const CONSTELLATION_SIZE=12;
+const CONSTELLATION_SPACING_DEG=360/CONSTELLATION_SIZE;
+let constellationBaseLon=-28,prev=performance.now();
 const MIN_ELEVATION_DEG=10;
 const EARTH_RADIUS_M=6371000;
 const COVERAGE_RADIUS_M=EARTH_RADIUS_M*(Math.acos((EARTH_RADIUS_M/(EARTH_RADIUS_M+ALT))*Math.cos(Cesium.Math.toRadians(MIN_ELEVATION_DEG)))-Cesium.Math.toRadians(MIN_ELEVATION_DEG));
-const state={scenario:1,traffic:65,failure:null,isl:false,selected:"satA",optimized:false,coverageAvailable:false,coverageElevation:-90,previousCoverage:null};
+const state={scenario:1,traffic:65,failure:null,isl:false,selected:"satA",optimized:false,coverageAvailable:false,coverageElevation:-90,previousCoverage:null,activeSatelliteIndex:0,previousActiveSatelliteIndex:null,handoverCount:0};
 const scenarios={
 1:{name:"Regenerative payload",short:"UE → satellite [DU+CU] → CN",description:"The LEO satellite hosts DU and CU functions and performs regenerative processing before forwarding traffic to the core network.",baseLatency:38,baseThroughput:720,processing:78,availability:99.35,objects:{ue:{name:"UE Cluster",fn:"User Equipment",kind:"ground",lon:-8,lat:5,color:Cesium.Color.CYAN},satA:{name:"LEO Satellite",fn:"DU + CU",kind:"sat"},cn:{name:"Core Network",fn:"CN",kind:"ground",lon:12,lat:43,color:Cesium.Color.LIME}},links:[["ue","satA","service"],["satA","cn","feeder"]]},
 2:{name:"Satellite DU / Ground CU",short:"UE → satellite DU → ground CU → CN",description:"The DU is hosted on the satellite while the CU remains on the ground.",baseLatency:48,baseThroughput:660,processing:61,availability:99.15,objects:{ue:{name:"UE Cluster",fn:"User Equipment",kind:"ground",lon:-8,lat:5,color:Cesium.Color.CYAN},satA:{name:"LEO Satellite",fn:"DU",kind:"sat"},cu:{name:"Ground CU",fn:"CU",kind:"ground",lon:1,lat:35,color:Cesium.Color.ORANGE},cn:{name:"Core Network",fn:"CN",kind:"ground",lon:12,lat:43,color:Cesium.Color.LIME}},links:[["ue","satA","service"],["satA","cu","feeder"],["cu","cn","ground"]]},
@@ -130,10 +135,30 @@ const scenarios={
 
 const nodes={},links=[];
 function scenario(){return scenarios[state.scenario]}
+function wrapLongitude(lon){
+  let value=((lon+180)%360+360)%360-180;
+  return value;
+}
+function constellationLongitude(index){
+  return wrapLongitude(constellationBaseLon+index*CONSTELLATION_SPACING_DEG);
+}
+function constellationLatitude(index){
+  const lon=constellationLongitude(index);
+  return 12*Math.sin(Cesium.Math.toRadians(lon));
+}
+function constellationPosition(index,altitude=ALT){
+  return Cesium.Cartesian3.fromDegrees(constellationLongitude(index),constellationLatitude(index),altitude);
+}
+function satelliteName(index){
+  return `LEO-${String(index+1).padStart(2,"0")}`;
+}
+function relaySatelliteIndex(){
+  return (state.activeSatelliteIndex+2)%CONSTELLATION_SIZE;
+}
 function pos(id){
   const o=scenario().objects[id];
-  if(o.kind==="sat")return Cesium.Cartesian3.fromDegrees(satLon,12*Math.sin(Cesium.Math.toRadians(satLon)),ALT);
-  if(o.kind==="sat2")return Cesium.Cartesian3.fromDegrees(sat2Lon,20*Math.sin(Cesium.Math.toRadians(sat2Lon+25)),ALT+150000);
+  if(o.kind==="sat")return constellationPosition(state.activeSatelliteIndex,ALT);
+  if(o.kind==="sat2")return constellationPosition(relaySatelliteIndex(),ALT+150000);
   return Cesium.Cartesian3.fromDegrees(o.lon,o.lat,0);
 }
 
@@ -154,9 +179,8 @@ function serviceSatelliteId(){
   if(!link)return null;
   return isSpaceObject(link[0])?link[0]:link[1];
 }
-function elevationAngleDeg(groundId,satelliteId){
+function elevationAngleToPosition(groundId,satellitePosition){
   const groundPosition=pos(groundId);
-  const satellitePosition=pos(satelliteId);
   const lineOfSight=Cesium.Cartesian3.subtract(satellitePosition,groundPosition,new Cesium.Cartesian3());
   Cesium.Cartesian3.normalize(lineOfSight,lineOfSight);
   const localUp=Cesium.Ellipsoid.WGS84.geodeticSurfaceNormal(groundPosition,new Cesium.Cartesian3());
@@ -166,9 +190,17 @@ function elevationAngleDeg(groundId,satelliteId){
 function coverageInfo(){
   const groundId=serviceGroundId();
   const satelliteId=serviceSatelliteId();
-  if(!groundId||!satelliteId)return{available:true,elevation:90,groundId,satelliteId};
-  const elevation=elevationAngleDeg(groundId,satelliteId);
-  return{available:elevation>=MIN_ELEVATION_DEG,elevation,groundId,satelliteId};
+  if(!groundId||!satelliteId)return{available:true,elevation:90,groundId,satelliteId,index:0};
+  let bestIndex=0;
+  let bestElevation=-90;
+  for(let index=0;index<CONSTELLATION_SIZE;index+=1){
+    const elevation=elevationAngleToPosition(groundId,constellationPosition(index,ALT));
+    if(elevation>bestElevation){
+      bestElevation=elevation;
+      bestIndex=index;
+    }
+  }
+  return{available:bestElevation>=MIN_ELEVATION_DEG,elevation:bestElevation,groundId,satelliteId,index:bestIndex};
 }
 function linkAvailable(a,b,type){
   if(type!=="service")return true;
@@ -180,16 +212,30 @@ function isCoverageDependentGroundObject(id){
 }
 function refreshCoverageState(writeLog=true){
   const info=coverageInfo();
+  const previousIndex=state.activeSatelliteIndex;
+  state.activeSatelliteIndex=info.index;
   state.coverageAvailable=info.available;
   state.coverageElevation=info.elevation;
   coverageState.textContent=info.available?"AVAILABLE":"NO COVERAGE";
   coverageState.className=info.available?"nominal":"critical";
+  activeSatelliteName.textContent=satelliteName(info.index);
   coverageElevation.textContent=info.elevation.toFixed(1)+"°";
+  constellationSize.textContent=CONSTELLATION_SIZE+" LEO";
+
+  if(state.previousActiveSatelliteIndex!==null&&state.previousActiveSatelliteIndex!==info.index){
+    state.handoverCount+=1;
+    handoverCount.textContent=state.handoverCount;
+    if(writeLog){
+      log("HANDOVER",`${satelliteName(state.previousActiveSatelliteIndex)} → ${satelliteName(info.index)} at ${info.elevation.toFixed(1)}° elevation.`);
+    }
+  }
+  state.previousActiveSatelliteIndex=info.index;
+
   if(writeLog&&state.previousCoverage!==null&&state.previousCoverage!==info.available){
     if(info.available){
-      log("COVERAGE","UE entered the LEO satellite footprint. NTN service restored.");
+      log("COVERAGE",`UE service restored through ${satelliteName(info.index)}.`);
     }else{
-      log("OUTAGE","UE left the LEO satellite footprint. Service link disabled.","critical");
+      log("OUTAGE","No LEO satellite satisfies the minimum elevation threshold.","critical");
     }
   }
   state.previousCoverage=info.available;
@@ -198,21 +244,50 @@ function orbit(alt,color,amp,phase){
   const ps=[];for(let l=-180;l<=180;l+=2)ps.push(Cesium.Cartesian3.fromDegrees(l,amp*Math.sin(Cesium.Math.toRadians(l+phase)),alt));
   return viewer.entities.add({polyline:{positions:ps,width:3,material:color,arcType:Cesium.ArcType.NONE}});
 }
-const orbitA=orbit(ALT,Cesium.Color.CYAN,12,0),orbitB=orbit(ALT+150000,Cesium.Color.ORANGE.withAlpha(.65),20,28);
+const orbitA=orbit(ALT,Cesium.Color.CYAN,12,0);
+const orbitB=orbit(ALT+150000,Cesium.Color.ORANGE.withAlpha(.45),12,15);
+
+const constellationEntities=[];
+for(let index=0;index<CONSTELLATION_SIZE;index+=1){
+  const entity=viewer.entities.add({
+    name:satelliteName(index),
+    position:new Cesium.CallbackPositionProperty(()=>constellationPosition(index,ALT),false),
+    point:{
+      pixelSize:new Cesium.CallbackProperty(()=>index===state.activeSatelliteIndex?13:8,false),
+      color:new Cesium.CallbackProperty(()=>index===state.activeSatelliteIndex?Cesium.Color.CYAN:Cesium.Color.WHITE.withAlpha(.75),false),
+      outlineColor:Cesium.Color.BLACK,
+      outlineWidth:2
+    },
+    label:{
+      text:new Cesium.CallbackProperty(()=>index===state.activeSatelliteIndex?`${satelliteName(index)}\nSERVING UE`:satelliteName(index),false),
+      font:"bold 11px Arial",
+      fillColor:new Cesium.CallbackProperty(()=>index===state.activeSatelliteIndex?Cesium.Color.CYAN:Cesium.Color.LIGHTGRAY,false),
+      outlineColor:Cesium.Color.BLACK,
+      outlineWidth:3,
+      style:Cesium.LabelStyle.FILL_AND_OUTLINE,
+      showBackground:true,
+      backgroundColor:Cesium.Color.BLACK.withAlpha(.58),
+      pixelOffset:new Cesium.Cartesian2(0,-24),
+      disableDepthTestDistance:Number.POSITIVE_INFINITY,
+      scale:new Cesium.CallbackProperty(()=>index===state.activeSatelliteIndex?1:.72,false)
+    }
+  });
+  constellationEntities.push(entity);
+}
 
 const coverageFootprint=viewer.entities.add({
-  name:"LEO Service Coverage",
+  name:"Active LEO Service Coverage",
   position:new Cesium.CallbackPositionProperty(()=>Cesium.Cartesian3.fromDegrees(
-    satLon,
-    12*Math.sin(Cesium.Math.toRadians(satLon)),
+    constellationLongitude(state.activeSatelliteIndex),
+    constellationLatitude(state.activeSatelliteIndex),
     0
   ),false),
   ellipse:{
     semiMajorAxis:COVERAGE_RADIUS_M,
     semiMinorAxis:COVERAGE_RADIUS_M,
-    material:Cesium.Color.CYAN.withAlpha(.12),
+    material:Cesium.Color.CYAN.withAlpha(.13),
     outline:true,
-    outlineColor:Cesium.Color.CYAN.withAlpha(.75),
+    outlineColor:Cesium.Color.CYAN.withAlpha(.8),
     height:0
   }
 });
@@ -272,14 +347,14 @@ function render(){
   scenarioDescription.textContent=scenario().description;
   bannerTitle.textContent=`Scenario ${state.scenario}: ${scenario().name}`;
   bannerText.textContent=scenario().short;
-  objectCount.textContent=Object.keys(scenario().objects).length;
+  objectCount.textContent=Object.keys(scenario().objects).length+CONSTELLATION_SIZE-1;
   linkCount.textContent=active.length;
   quickArchitecture.textContent="S"+state.scenario;
   buildButtons();
   update();
   flyAll();
 }
-function buildButtons(){scenarioList.innerHTML="";Object.entries(scenarios).forEach(([id,s])=>{const b=document.createElement("button");b.className="scenario"+(+id===state.scenario?" active":"");b.innerHTML=`<b>(${id}) ${s.name}</b><small>${s.short}</small>`;b.onclick=()=>{state.scenario=+id;state.failure=null;state.isl=false;state.optimized=false;state.previousCoverage=null;state.selected=scenarios[id].objects.satA?"satA":Object.keys(scenarios[id].objects)[0];render();log("ARCH",`Scenario ${id} selected`)};scenarioList.appendChild(b)})}
+function buildButtons(){scenarioList.innerHTML="";Object.entries(scenarios).forEach(([id,s])=>{const b=document.createElement("button");b.className="scenario"+(+id===state.scenario?" active":"");b.innerHTML=`<b>(${id}) ${s.name}</b><small>${s.short}</small>`;b.onclick=()=>{state.scenario=+id;state.failure=null;state.isl=false;state.optimized=false;state.previousCoverage=null;state.previousActiveSatelliteIndex=null;state.selected=scenarios[id].objects.satA?"satA":Object.keys(scenarios[id].objects)[0];render();log("ARCH",`Scenario ${id} selected`)};scenarioList.appendChild(b)})}
 function load(id){const o=scenario().objects[id];if(!o)return 0;if(state.failure===id)return 99;let base=o.fn.includes("DU + CU")?scenario().processing:o.fn==="DU"?scenario().processing*.72:o.fn==="CU"?scenario().processing*.62:o.fn==="CN"?43:o.fn==="Relay"||o.fn==="Transport"?25:36;return Math.max(8,Math.min(99,base*(.55+state.traffic/150)-(state.optimized?8:0)))}
 function metrics(){
   const s=scenario(),f=state.failure?24:0,opt=state.optimized?8:0;
@@ -328,7 +403,7 @@ function update(){
   quickRisk.className=critical?"critical":warning?"warning":"nominal";
   if(noCoverage){
     decisionTitle.textContent="Wait for the next satellite pass";
-    decisionText.textContent=`The service-link elevation is ${state.coverageElevation.toFixed(1)}°, below the ${MIN_ELEVATION_DEG}° minimum. UE throughput is zero until coverage is restored or another satellite is selected.`;
+    decisionText.textContent=`All constellation satellites are below the ${MIN_ELEVATION_DEG}° minimum elevation. This should be rare with the ${CONSTELLATION_SIZE}-satellite LEO constellation.`;
   }else if(state.failure){
     decisionTitle.textContent="Execute recovery";
     decisionText.textContent="A simulated object failure is degrading service. Recover the failed object and validate an alternate route.";
@@ -343,15 +418,14 @@ function update(){
 function log(type,msg,severity=""){const e=document.createElement("div");e.className="event "+severity;e.innerHTML=`<time>${new Date().toLocaleTimeString("en-GB",{hour12:false})}</time><b>${type}</b><span>${msg}</span>`;eventLog.prepend(e);while(eventLog.children.length>10)eventLog.removeChild(eventLog.lastChild)}
 function activate(id){document.querySelectorAll(".cam button").forEach(b=>b.classList.remove("active"));document.getElementById(id).classList.add("active")}
 function flyAll(){activate("btnAll");viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(5,18,24000000),duration:1.8})}
-btnAll.onclick=flyAll;btnUE.onclick=()=>{activate("btnUE");const o=scenario().objects.ue;viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(o.lon,o.lat+10,6000000),duration:1.7})};btnLEO.onclick=()=>{activate("btnLEO");viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(satLon,25,8000000),duration:1.7})};btnCN.onclick=()=>{activate("btnCN");const o=scenario().objects.cn;viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(o.lon,o.lat+7,6000000),duration:1.7})};
+btnAll.onclick=flyAll;btnUE.onclick=()=>{activate("btnUE");const o=scenario().objects.ue;viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(o.lon,o.lat+10,6000000),duration:1.7})};btnLEO.onclick=()=>{activate("btnLEO");viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(constellationLongitude(state.activeSatelliteIndex),constellationLatitude(state.activeSatelliteIndex)+13,8000000),duration:1.7})};btnCN.onclick=()=>{activate("btnCN");const o=scenario().objects.cn;viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(o.lon,o.lat+7,6000000),duration:1.7})};
 trafficSlider.oninput=e=>{state.traffic=+e.target.value;update()};optimizeBtn.onclick=()=>{state.optimized=true;state.traffic=Math.max(35,state.traffic-12);trafficSlider.value=state.traffic;update();log("ACTION","Traffic optimization executed")};failureBtn.onclick=()=>{state.failure=state.selected;update();log("ALARM",state.failure.toUpperCase()+" entered critical state","critical")};recoveryBtn.onclick=()=>{if(!state.failure)return log("PROC","No failed object requires recovery");log("PROC","Recovery completed for "+state.failure.toUpperCase());state.failure=null;update()};islBtn.onclick=()=>{state.isl=!state.isl;render();log("ROUTE","ISL "+(state.isl?"activated":"deactivated"))};reportBtn.onclick=()=>{const m=metrics();alert(`SIMULATED PERFORMANCE REPORT\\n\\nScenario ${state.scenario}: ${scenario().name}\\nCoverage: ${state.coverageAvailable?"AVAILABLE":"NO COVERAGE"}\\nElevation: ${state.coverageElevation.toFixed(1)}°\\nLatency: ${m.lat===null?"N/A":m.lat.toFixed(1)+" ms"}\\nThroughput: ${m.thr.toFixed(0)} Mbps\\nProcessing: ${m.proc.toFixed(1)} %\\nAvailability: ${m.av.toFixed(2)} %`);log("REPORT","Performance report generated")};
 const handler=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);handler.setInputAction(c=>{const p=viewer.scene.pick(c.position);if(Cesium.defined(p)&&p.id&&p.id.nodeId){state.selected=p.id.nodeId;update();log("SELECT",p.id.name+" selected")}},Cesium.ScreenSpaceEventType.LEFT_CLICK);
 const start=Date.now();setInterval(()=>{const t=Math.floor((Date.now()-start)/1000);missionClock.textContent=`${String(Math.floor(t/3600)).padStart(2,"0")}:${String(Math.floor((t%3600)/60)).padStart(2,"0")}:${String(t%60).padStart(2,"0")}`},1000);
 function animate(now){
   const d=now-prev;prev=now;
-  satLon+=.008*d;sat2Lon+=.005*d;
-  if(satLon>180)satLon=-180;
-  if(sat2Lon>180)sat2Lon=-180;
+  constellationBaseLon+=.008*d;
+  if(constellationBaseLon>180)constellationBaseLon=-180;
   requestAnimationFrame(animate);
 }
 requestAnimationFrame(animate);
@@ -365,6 +439,7 @@ refreshCoverageState(false);
 update();
 log("SYS","Cesium NTN framework initialized");
 log("DATA","Synthetic telemetry connected");
+log("CONSTELLATION",`${CONSTELLATION_SIZE} LEO satellites deployed with automatic best-elevation handover.`);
 log("COVERAGE",`Minimum service-link elevation set to ${MIN_ELEVATION_DEG}°.`);
 </script>
 </body>
