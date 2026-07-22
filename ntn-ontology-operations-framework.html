@@ -16,6 +16,12 @@
     .label{margin:0 0 10px;color:#4ec7ef;font-size:9px;font-weight:bold;letter-spacing:1.5px;text-transform:uppercase}.scenario-list{display:grid;gap:7px;margin-bottom:15px}.scenario{padding:10px;border:1px solid rgba(255,255,255,.07);border-radius:8px;background:rgba(255,255,255,.025);color:#fff;text-align:left;cursor:pointer}.scenario.active{border-color:#4ec7ef;background:rgba(78,199,239,.11)}.scenario b{display:block;font-size:11px;margin-bottom:4px}.scenario small{font-size:9px;color:#8ba2b6;line-height:1.35}
     .panel{margin-bottom:11px;padding:14px;border:1px solid rgba(255,255,255,.07);border-radius:9px;background:linear-gradient(145deg,rgba(16,32,51,.97),rgba(8,19,31,.97))}.panel h2{margin:0 0 10px;font-size:15px}.panel p{margin:0;color:#a9bdcc;font-size:10px;line-height:1.5}.row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)}.row:last-child{border-bottom:0}.row span{color:#8da4b7;font-size:10px}.row strong{font-size:11px}
     .actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}.actions button,.cam button{padding:9px;border:1px solid rgba(255,255,255,.08);border-radius:7px;background:rgba(255,255,255,.04);color:#eaf5fc;cursor:pointer;font-size:10px}.actions button:hover,.cam button:hover{border-color:#4ec7ef}.actions .primary{background:#4ec7ef;color:#04111d;font-weight:bold}.actions .danger{border-color:rgba(255,91,91,.55);color:#ffd4d4;background:rgba(255,91,91,.08)}
+    .object-selector{display:grid;grid-template-columns:minmax(0,1fr) 68px;gap:7px;margin-bottom:12px}
+    .object-selector select,.object-selector button{min-width:0;padding:9px 8px;border:1px solid rgba(78,199,239,.28);border-radius:7px;background:#081725;color:#eef8ff;font-size:10px}
+    .object-selector select{cursor:pointer}
+    .object-selector option,.object-selector optgroup{background:#081725;color:#eef8ff}
+    .object-selector button{cursor:pointer;font-weight:bold;color:#5bd7ff;background:rgba(78,199,239,.10)}
+    .object-selector button:hover{border-color:#4ec7ef;background:rgba(78,199,239,.20)}
     .overlay{position:absolute;z-index:10;background:rgba(5,15,28,.9);border:1px solid rgba(80,190,255,.2);border-radius:9px;backdrop-filter:blur(6px)}.cam{left:18px;top:18px;display:flex;flex-direction:column;gap:7px;padding:8px}.cam button.active{color:#4ec7ef;border-color:#4ec7ef;background:rgba(78,199,239,.12)}.info{left:18px;bottom:18px;width:260px;padding:12px}.banner{right:18px;top:18px;width:300px;padding:14px}.banner h2{margin:0 0 7px;font-size:16px}.banner p{margin:0;color:#a9bdcc;font-size:10px;line-height:1.45}
     .bottom{display:grid;grid-template-columns:minmax(0,1fr) 365px;gap:1px;background:rgba(80,180,255,.12);border-top:1px solid rgba(80,180,255,.12)}.logpanel{padding:12px 15px;background:#06111c}.loghead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.loghead h2{margin:0;font-size:13px}.loghead span{color:#8199ac;font-size:8px}.log{height:105px;overflow-y:auto;font-family:"Courier New",monospace}.event{display:grid;grid-template-columns:75px 60px 1fr;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:9px;color:#b8c9d5}.event time{color:#657d90}.event b{color:#4ec7ef}.event.critical b{color:#ff5b5b}
     .summary{display:grid;grid-template-columns:1fr 1fr;gap:8px}.card{padding:12px;border:1px solid rgba(255,255,255,.07);border-radius:8px;background:rgba(255,255,255,.025)}.card span{display:block;color:#879fb3;font-size:8px;text-transform:uppercase}.card strong{display:block;margin-top:6px;font-size:15px}.nominal{color:#35e08b!important}.warning{color:#ffc857!important}.critical{color:#ff5b5b!important}
@@ -75,7 +81,11 @@
         <div class="row"><span>Availability</span><strong id="availability">--</strong></div>
       </section>
       <section class="panel">
-        <p class="label">Object inspector — click an object</p>
+        <p class="label">Object inspector — click or select an object</p>
+        <div class="object-selector">
+          <select id="objectSelector" aria-label="Select an available object"></select>
+          <button id="focusSelectedBtn" type="button">Focus</button>
+        </div>
         <div class="row"><span>Name</span><strong id="selectedName">--</strong></div>
         <div class="row"><span>Type</span><strong id="selectedType">--</strong></div>
         <div class="row"><span>Function</span><strong id="selectedFunction">--</strong></div>
@@ -479,6 +489,7 @@ function render(){
   linkCount.textContent=active.length;
   quickArchitecture.textContent="S"+state.scenario;
   buildButtons();
+  buildObjectSelector();
   update();
   flyAll();
 }
@@ -502,6 +513,94 @@ function metrics(){
     av:Math.max(91,s.availability-Math.max(0,state.traffic-75)*.025-(state.failure?3.1:0)+(state.isl?.35:0))
   };
 }
+function selectedObjectMenuValue(){
+  if(state.selectedSatelliteIndex!==null)return `sat:${state.selectedSatelliteIndex}`;
+  return `node:${state.selected}`;
+}
+function syncObjectSelector(){
+  const selector=document.getElementById("objectSelector");
+  if(!selector)return;
+  const value=selectedObjectMenuValue();
+  if([...selector.options].some(option=>option.value===value)){
+    selector.value=value;
+  }
+}
+function buildObjectSelector(){
+  const selector=document.getElementById("objectSelector");
+  if(!selector)return;
+
+  selector.innerHTML="";
+
+  const architectureGroup=document.createElement("optgroup");
+  architectureGroup.label=`Scenario ${state.scenario} objects`;
+
+  Object.entries(scenario().objects).forEach(([id,object])=>{
+    const option=document.createElement("option");
+    option.value=`node:${id}`;
+    option.textContent=`${object.name} — ${object.fn}`;
+    architectureGroup.appendChild(option);
+  });
+  selector.appendChild(architectureGroup);
+
+  const constellationGroup=document.createElement("optgroup");
+  constellationGroup.label=`LEO constellation (${CONSTELLATION_SIZE})`;
+
+  for(let index=0;index<CONSTELLATION_SIZE;index+=1){
+    const option=document.createElement("option");
+    option.value=`sat:${index}`;
+    option.textContent=satelliteName(index);
+    constellationGroup.appendChild(option);
+  }
+  selector.appendChild(constellationGroup);
+
+  syncObjectSelector();
+}
+function focusSelectedObject(){
+  let target;
+  let range;
+
+  if(state.selectedSatelliteIndex!==null){
+    target=constellationPosition(state.selectedSatelliteIndex,ALT);
+    range=4200000;
+  }else{
+    const object=scenario().objects[state.selected];
+    if(!object)return;
+    target=pos(state.selected);
+    range=(object.kind==="sat"||object.kind==="sat2")?4200000:2600000;
+  }
+
+  viewer.camera.flyToBoundingSphere(
+    new Cesium.BoundingSphere(target,1000),
+    {
+      duration:1.5,
+      offset:new Cesium.HeadingPitchRange(
+        0,
+        Cesium.Math.toRadians(-35),
+        range
+      )
+    }
+  );
+}
+function selectObjectFromMenu(value,focus=false){
+  if(value.startsWith("sat:")){
+    const index=Number(value.slice(4));
+    if(!Number.isInteger(index)||index<0||index>=CONSTELLATION_SIZE)return;
+    state.selectedSatelliteIndex=index;
+    update();
+    log("SELECT",`${satelliteName(index)} selected from object menu · elevation ${satelliteElevation(index).toFixed(1)}°`);
+  }else if(value.startsWith("node:")){
+    const id=value.slice(5);
+    if(!scenario().objects[id])return;
+    state.selectedSatelliteIndex=null;
+    state.selected=id;
+    update();
+    log("SELECT",`${scenario().objects[id].name} selected from object menu`);
+  }
+
+  syncObjectSelector();
+  if(focus)focusSelectedObject();
+}
+
 function nodeType(id,o){
   if(o.kind==="sat"||o.kind==="sat2")return "Architecture satellite";
   if(id==="ue")return "User terminal";
@@ -521,6 +620,7 @@ function satelliteEstimatedLoad(index){
   return 4.5;
 }
 function updateSelectedObjectPanel(noCoverage){
+  syncObjectSelector();
   if(state.selectedSatelliteIndex!==null){
     const index=state.selectedSatelliteIndex;
     const longitude=constellationLongitude(index);
@@ -634,6 +734,13 @@ trafficSlider.oninput=e=>{state.traffic=+e.target.value;update()};optimizeBtn.on
   update();
   log("ALARM",state.failure.toUpperCase()+" entered critical state","critical");
 };recoveryBtn.onclick=()=>{if(!state.failure)return log("PROC","No failed object requires recovery");log("PROC","Recovery completed for "+state.failure.toUpperCase());state.failure=null;update()};islBtn.onclick=()=>{state.isl=!state.isl;render();log("ROUTE","ISL "+(state.isl?"activated":"deactivated"))};reportBtn.onclick=()=>{const m=metrics();alert(`SIMULATED PERFORMANCE REPORT\\n\\nScenario ${state.scenario}: ${scenario().name}\\nCoverage: ${state.coverageAvailable?"AVAILABLE":"NO COVERAGE"}\\nElevation: ${state.coverageElevation.toFixed(1)}°\\nLatency: ${m.lat===null?"N/A":m.lat.toFixed(1)+" ms"}\\nThroughput: ${m.thr.toFixed(0)} Mbps\\nProcessing: ${m.proc.toFixed(1)} %\\nAvailability: ${m.av.toFixed(2)} %`);log("REPORT","Performance report generated")};
+document.getElementById("objectSelector").addEventListener("change",event=>{
+  selectObjectFromMenu(event.target.value,false);
+});
+document.getElementById("focusSelectedBtn").addEventListener("click",()=>{
+  focusSelectedObject();
+});
+
 const handler=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
 handler.setInputAction(click=>{
   const picked=viewer.scene.pick(click.position);
@@ -642,6 +749,7 @@ handler.setInputAction(click=>{
   if(Number.isInteger(picked.id.satelliteIndex)){
     state.selectedSatelliteIndex=picked.id.satelliteIndex;
     update();
+    syncObjectSelector();
     log("SELECT",`${satelliteName(state.selectedSatelliteIndex)} selected · elevation ${satelliteElevation(state.selectedSatelliteIndex).toFixed(1)}°`);
     return;
   }
@@ -650,6 +758,7 @@ handler.setInputAction(click=>{
     state.selectedSatelliteIndex=null;
     state.selected=picked.id.nodeId;
     update();
+    syncObjectSelector();
     log("SELECT",`${picked.id.name} selected`);
   }
 },Cesium.ScreenSpaceEventType.LEFT_CLICK);
